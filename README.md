@@ -70,14 +70,7 @@ Frontend (React + Vite) │ │ Axios HTTP Request ▼ Backend (Node.js + Expres
 
 ## Tools
 - Git & GitHub
-- Postman (API testing)
-
----
-
-# 📂 Struktur Proyek
-
-danadiri/ │ ├── backend/ │   ├── src/ │   │   ├── config/ │   │   ├── controllers/ │   │   ├── middleware/ │   │   ├── models/ │   │   ├── routes/ │   │   ├── utils/ │   │   └── app.js │   └── server.js │ ├── frontend/ │   ├── src/ │   │   ├── pages/ │   │   ├── components/ │   │   ├── services/ │   │   ├── utils/ │   │   └── assets/ │   └── index.html │ └── README.md
-
+- Postman
 ---
 
 # 🔗 API Endpoint
@@ -120,37 +113,37 @@ danadiri/ │ ├── backend/ │   ├── src/ │   │   ├── conf
 ```bash
 git clone https://github.com/username/danadiri.git
 cd danadiri
-
+```
 
 ---
 
 2️⃣ Setup Backend
-
+```bash
 cd backend
 npm install
-
+```
 Buat file .env
-
+```bash
 PORT=5000
 MONGO_URI=your_mongodb_connection
 JWT_SECRET=your_secret_key
-
+```
 Jalankan backend
-
+```bash
 npm run dev
-
+```
 
 ---
 
 3️⃣ Setup Frontend
-
+```bash
 cd frontend
 npm install
-
+```
 Jalankan frontend
-
+```bash
 npm run dev
-
+```
 
 ---
 
@@ -158,27 +151,13 @@ npm run dev
 
 Proyek ini dikembangkan sebagai Capstone Project oleh tim developer.
 
-Kontributor:
-
-Frontend Developer
-
-Backend Developer
-
-Project Manager
-
-
-
 ---
 
 📌 Roadmap Pengembangan
 
 Fitur yang direncanakan untuk pengembangan selanjutnya:
 
-Budget Planning
-
 Export laporan keuangan
-
-Dark Mode
 
 Kategori transaksi custom
 
@@ -218,14 +197,3 @@ Jika ingin berkontribusi:
 ---
 
 DanaDiri — Kelola keuanganmu dengan lebih cerdas.
-
----
-
-💡 Kalau kamu mau, aku juga bisa buatkan **README versi yang jauh lebih keren seperti proyek GitHub profesional**, misalnya dengan:
-
-- **Preview UI**
-- **Architecture Diagram**
-- **Tech stack badge**
-- **Screenshots aplikasi**
-- **Deployment link**
-- **API documentation section**
