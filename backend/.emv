@@ -1,0 +1,4 @@
+MONGO_URI=mongodb+srv://DanaDiriDB:DanaDiri2028@ac-n1fjg9x.06yihyu.mongodb.net/danadiri?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=DanaDiriCapstone2026
+NODE_ENV=development
+PORT=5000
