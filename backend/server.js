@@ -1,14 +1,26 @@
-const dotenv = require('dotenv');
-const connectDB = require('./src/config/database');
-const app = require('./src/app');
+  const dotenv = require('dotenv');
+  const connectDB = require('./src/config/database');
+  const app = require('./src/app');
+  const budgetRoutes = require('./src/routes/budgetRoutes');
+  const insightRoutes = require('./src/routes/insightRoutes');
+  const runRecurring = require('./src/utils/recurringJob');
 
-dotenv.config();
+// 🔥 jalan tiap 1 jam (bisa diubah)
+setInterval(() => {
+  runRecurring();
+}, 1000 * 60 * 60);
 
-// Koneksi ke database
-connectDB();
+  dotenv.config();
 
-const PORT = process.env.PORT || 5000;
+  // koneksi DB
+  connectDB();
 
-app.listen(PORT, () => {
-  console.log(`Server berjalan di port ${PORT}`);
-});
+  // 🔥 DAFTARKAN ROUTE DULU
+  app.use('/api/budget', budgetRoutes);
+  app.use('/api/insight', insightRoutes);
+
+  // BARU JALANKAN SERVER
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server berjalan di port ${PORT}`);
+  });

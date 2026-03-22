@@ -8,20 +8,17 @@ const generateToken = require('../utils/generateToken');
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Validasi input
   if (!name || !email || !password) {
     res.status(400);
     throw new Error('Semua field harus diisi');
   }
 
-  // Cek apakah user sudah ada
   const userExists = await User.findOne({ email });
   if (userExists) {
     res.status(400);
     throw new Error('Email sudah terdaftar');
   }
 
-  // Buat user baru
   const user = await User.create({
     name,
     email,
@@ -47,16 +44,13 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Validasi input
   if (!email || !password) {
     res.status(400);
     throw new Error('Email dan password harus diisi');
   }
 
-  // Cari user berdasarkan email
   const user = await User.findOne({ email });
 
-  // Cek password
   if (user && (await user.matchPassword(password))) {
     res.json({
       _id: user._id,
@@ -70,11 +64,10 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Mendapatkan profil user
-// @route   GET /api/auth/profile
-// @access  Private
+// @desc    Get profile
 const getUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select('-password');
+
   if (user) {
     res.json(user);
   } else {
@@ -83,4 +76,36 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { registerUser, loginUser, getUserProfile };
+// @desc    Update profile
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      token: generateToken(updatedUser._id),
+    });
+  } else {
+    res.status(404);
+    throw new Error('User tidak ditemukan');
+  }
+});
+
+// ✅ EXPORT HARUS DI PALING BAWAH
+module.exports = {
+  registerUser,
+  loginUser,
+  getUserProfile,
+  updateUserProfile,
+};

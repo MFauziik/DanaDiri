@@ -5,6 +5,9 @@ const authRoutes = require('./routes/authRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const goalRoutes = require('./routes/goalRoutes');
+const insightRoutes = require('./routes/insightRoutes');
+const budgetRoutes = require('./routes/budgetRoutes');
+const recurringRoutes = require('./routes/recurringRoutes');
 
 dotenv.config();
 
@@ -15,9 +18,12 @@ app.use(cors());
 app.use(express.json()); // untuk parsing application/json
 
 // Routes
+app.use('/api/insight', insightRoutes);
+app.use('/api/budget', budgetRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/goals', goalRoutes);
+app.use('/api/recurring', recurringRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
