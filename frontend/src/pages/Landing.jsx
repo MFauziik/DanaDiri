@@ -1,301 +1,380 @@
-import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import "./Landing.css";
 
-// PENTING: Terima prop 'user' di sini!
-const Landing = ({ user }) => {
+// ─── Icons ────────────────────────────────────────────────────────────────────
+const IconArrow = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 12h14M12 5l7 7-7 7" />
+  </svg>
+);
+const IconCheck = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const IconWallet = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
+    <path d="M4 6v12c0 1.1.9 2 2 2h14v-4" />
+    <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" />
+  </svg>
+);
+const IconChart = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6"  y1="20" x2="6"  y2="14" />
+  </svg>
+);
+const IconShield = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+const IconTarget = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2" />
+  </svg>
+);
+const IconInstagram = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+const IconTwitter = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
+  </svg>
+);
+const IconFacebook = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+  </svg>
+);
+
+// ─── Animated Counter ─────────────────────────────────────────────────────────
+function Counter({ end, suffix = "", duration = 2000 }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const startTime = Date.now();
+        const tick = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setCount(Math.floor(eased * end));
+          if (progress < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    }, { threshold: 0.5 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [end, duration]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function Landing() {
+  const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const els = document.querySelectorAll(".fade-in-section");
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach(e => e.isIntersecting && e.target.classList.add("is-visible")),
+      { threshold: 0.12 }
+    );
+    els.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  const problems = [
+    {
+      img: "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=400&q=80",
+      title: "Boros Tanpa Sadar",
+      desc: "Pengeluaran kecil yang sering tak terdeteksi bisa menguras tabungan Anda tanpa disadari.",
+    },
+    {
+      img: "https://images.unsplash.com/photo-1554224155-1696413565d3?w=400&q=80",
+      title: "Tabungan Stagnan",
+      desc: "Tanpa strategi yang tepat, tabungan Anda hanya diam dan tidak berkembang optimal.",
+    },
+    {
+      img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=80",
+      title: "Bingung Alur Kas",
+      desc: "Sulit memahami ke mana uang pergi setiap bulan membuat perencanaan menjadi mustahil.",
+    },
+  ];
+
+  const solutions = [
+    { icon: <IconWallet />, color: "#3B82F6", title: "Pencatatan Transaksi", desc: "Catat setiap transaksi otomatis dan kategorikan pengeluaran dengan cerdas." },
+    { icon: <IconTarget />, color: "#8B5CF6", title: "Anggaran Otomatis",    desc: "Buat anggaran bulanan yang realistis berdasarkan pola keuangan Anda." },
+    { icon: <IconChart  />, color: "#10B981", title: "Grafik Visual",        desc: "Visualisasi data keuangan yang mudah dipahami dalam satu dashboard." },
+    { icon: <IconShield />, color: "#F59E0B", title: "Target Tabungan",      desc: "Tetapkan tujuan finansial dan pantau progresnya secara real-time." },
+  ];
+
+  const steps = [
+    { num: "1", title: "Buat Akun",        desc: "Daftar gratis dalam 30 detik. Tidak perlu kartu kredit untuk memulai." },
+    { num: "2", title: "Catat Transaksi",  desc: "Mulai tambahkan pemasukan dan pengeluaran harian Anda dengan mudah." },
+    { num: "3", title: "Lihat Insight",    desc: "Dapatkan analisis mendalam tentang kondisi finansial dan saran pintar." },
+  ];
+
+  const statsData = [
+    { num: 12000, suffix: "+",     label: "Pengguna Aktif"    },
+    { num: 98,    suffix: "%",     label: "Tingkat Kepuasan"  },
+    { num: 4500,  suffix: "+",     label: "Transaksi / Hari"  },
+    { num: 3,     suffix: " Tahun",label: "Pengalaman"        },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Navbar Khusus Landing */}
-      <nav className="bg-white shadow-lg fixed w-full z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-bold text-blue-600">
-              DanaDiri
-            </div>
-            <div className="space-x-4">
-              {user ? (
-                // Jika user sudah login
-                <>
-                  <Link
-                    to="/dashboard"
-                    className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/transactions"
-                    className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Transaksi
-                  </Link>
-                  <span className="text-gray-600 px-3 py-2 text-sm">
-                    Halo, {user.name}
-                  </span>
-                </>
-              ) : (
-                // Jika user belum login
-                <>
-                  <Link
-                    to="/login"
-                    className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Daftar Gratis
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
+    <>
+      {/* ── Navbar ── */}
+      <nav className={`nav ${scrolled ? "scrolled" : ""}`}>
+        <div className="nav-inner">
+          <div className="nav-logo">Dana<span>Fit</span></div>
+          <ul className="nav-links">
+            <li><a href="#masalah">Masalah</a></li>
+            <li><a href="#solusi">Solusi</a></li>
+            <li><a href="#cara-kerja">Cara Kerja</a></li>
+          </ul>
+          <button className="nav-cta" onClick={() => navigate("/register")}>
+            Mulai Gratis
+          </button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-24 pb-16 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6">
-            Kelola Keuangan Pribadi
-            <span className="text-blue-600 block mt-2">Dengan Mudah dan Cerdas</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
-            Catat pemasukan dan pengeluaran, lihat laporan keuangan, 
-            dan capai tujuan finansial Anda bersama DanaDiri.
-          </p>
-          <div className="space-x-4">
-            {user ? (
-              <Link
-                to="/dashboard"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold inline-block"
-              >
-                Buka Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/register"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold inline-block"
-              >
-                Mulai Sekarang
-              </Link>
-            )}
-            <a
-              href="#fitur"
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-8 py-3 rounded-lg text-lg font-semibold inline-block"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('fitur').scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Pelajari Lebih Lanjut
-            </a>
-          </div>
-          
-          {/* Gambar Preview */}
-          <div className="mt-16 bg-white rounded-xl shadow-2xl p-4 max-w-4xl mx-auto">
-            <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center text-gray-500">
-              [Preview Dashboard Aplikasi]
+      {/* ── Hero ── */}
+      <section className="hero">
+        <div className="hero-inner">
+          {/* Left */}
+          <div className="fade-in-section">
+            <div className="hero-badge">Platform Keuangan Cerdas</div>
+            <h1 className="hero-title">
+              Kenal uang,<br />
+              <span>Kenal diri.</span>
+            </h1>
+            <p className="hero-desc">
+              Platform keuangan pribadi yang dirancang untuk membantu mahasiswa
+              dan profesional muda dalam merencanakan masa depan finansial mereka.
+            </p>
+            <div className="hero-actions">
+              <button className="btn-primary" onClick={() => navigate("/register")}>
+                Mulai Sekarang <IconArrow />
+              </button>
+              <button className="btn-secondary" onClick={() => navigate("/login")}>
+                Masuk
+              </button>
+            </div>
+            <div className="hero-trust">
+              <div className="hero-trust-dots">
+                {["A","B","C","D"].map((l, i) => (
+                  <div className="trust-dot" key={i}>{l}</div>
+                ))}
+              </div>
+              <span>Dipercaya <strong>12,000+</strong> pengguna aktif</span>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Fitur Section */}
-      <section id="fitur" className="py-20 px-4 bg-white">
-        <div className="container mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-4">
-            Mengapa Memilih DanaDiri?
-          </h2>
-          <p className="text-xl text-center text-gray-600 mb-16 max-w-2xl mx-auto">
-            Fitur lengkap yang membantu Anda mengontrol keuangan dengan lebih baik
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Fitur 1 */}
-            <div className="bg-blue-50 rounded-xl p-8 text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+          {/* Right – visual card */}
+          <div className="hero-visual fade-in-section">
+            <div className="hero-card">
+              <div className="hero-card-header">
+                <span className="hero-card-title">Total Tabungan</span>
+                <span style={{ fontSize: 12, color: "#10B981", fontWeight: 600 }}>▲ 12.4%</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Pencatatan Mudah</h3>
-              <p className="text-gray-600">
-                Catat pemasukan dan pengeluaran dengan cepat, kategorisasi otomatis
-              </p>
+              <div className="hero-card-amount">Rp 8.400.000</div>
+              <div className="hero-card-sub">↑ Rp 340.000 bulan ini</div>
+              <div className="hero-bars">
+                {[0,1,2,3,4,5].map(i => <div className="hero-bar" key={i} />)}
+              </div>
+              <div className="hero-months">
+                {["Okt","Nov","Des","Jan","Feb","Mar"].map(m => <span key={m}>{m}</span>)}
+              </div>
             </div>
-
-            {/* Fitur 2 */}
-            <div className="bg-blue-50 rounded-xl p-8 text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Visualisasi Data</h3>
-              <p className="text-gray-600">
-                Lihat grafik pengeluaran per kategori untuk analisis keuangan
-              </p>
+            <div className="hero-float-card top-left">
+              <div className="float-label">Pengeluaran</div>
+              <div className="float-value red">Rp 2.1jt</div>
             </div>
-
-            {/* Fitur 3 */}
-            <div className="bg-blue-50 rounded-xl p-8 text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Aman & Terpercaya</h3>
-              <p className="text-gray-600">
-                Data Anda aman dengan enkripsi dan autentikasi JWT
-              </p>
+            <div className="hero-float-card bot-right">
+              <div className="float-label">Pemasukan</div>
+              <div className="float-value green">Rp 5.5jt</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimoni Section */}
-      <section className="py-20 px-4 bg-gray-50">
-        <div className="container mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-4">
-            Apa Kata Pengguna?
-          </h2>
-          <p className="text-xl text-center text-gray-600 mb-16">
-            Mereka yang sudah merasakan manfaat DanaDiri
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Testimoni 1 */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  A
-                </div>
-                <div className="ml-4">
-                  <h4 className="font-bold text-gray-800">Andi Pratama</h4>
-                  <p className="text-gray-600 text-sm">Pengusaha</p>
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "DanaDiri membantu saya memantau arus kas bisnis dengan sangat mudah. 
-                Fitur kategorinya lengkap dan grafiknya informatif!"
-              </p>
+      {/* ── Stats ── */}
+      <section className="stats">
+        <div className="stats-inner">
+          {statsData.map((s, i) => (
+            <div key={i} className="fade-in-section">
+              <div className="stat-num"><Counter end={s.num} suffix={s.suffix} /></div>
+              <div className="stat-label">{s.label}</div>
             </div>
+          ))}
+        </div>
+      </section>
 
-            {/* Testimoni 2 */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  S
-                </div>
-                <div className="ml-4">
-                  <h4 className="font-bold text-gray-800">Siti Nurhaliza</h4>
-                  <p className="text-gray-600 text-sm">Karyawan</p>
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "Akhirnya nemu aplikasi catatan keuangan yang simple dan tidak ribet. 
-                Dashboard-nya bagus untuk lihat kemana saja uang saya pergi."
-              </p>
-            </div>
-
-            {/* Testimoni 3 */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  B
-                </div>
-                <div className="ml-4">
-                  <h4 className="font-bold text-gray-800">Budi Santoso</h4>
-                  <p className="text-gray-600 text-sm">Freelancer</p>
+      {/* ── Problems ── */}
+      <section className="section problems" id="masalah">
+        <div className="section-inner">
+          <div className="section-header fade-in-section">
+            <span className="section-tag">Masalah Umum</span>
+            <h2 className="section-title">Masalah yang Sering Dihadapi</h2>
+            <p className="section-desc">
+              Banyak orang mengalami tantangan finansial yang sama.
+              Kami hadir untuk membantu Anda mengatasinya.
+            </p>
+          </div>
+          <div className="problems-grid">
+            {problems.map((p, i) => (
+              <div className="problem-card fade-in-section" key={i}>
+                <img src={p.img} alt={p.title} className="problem-img" />
+                <div className="problem-body">
+                  <div className="problem-title">{p.title}</div>
+                  <div className="problem-desc">{p.desc}</div>
                 </div>
               </div>
-              <p className="text-gray-600">
-                "Sebagai freelancer, penting banget punya catatan keuangan yang rapi. 
-                DanaDiri solusi tepat!"
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-blue-600">
-        <div className="container mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Siap Mengelola Keuangan dengan Lebih Baik?
-          </h2>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-            Daftar sekarang dan mulai catat keuangan Anda dengan mudah
-          </p>
-          {user ? (
-            <Link
-              to="/dashboard"
-              className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-3 rounded-lg text-lg font-semibold inline-block"
-            >
-              Buka Dashboard
-            </Link>
-          ) : (
-            <Link
-              to="/register"
-              className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-3 rounded-lg text-lg font-semibold inline-block"
-            >
-              Daftar Gratis Sekarang
-            </Link>
-          )}
+      {/* ── Solutions ── */}
+      <section className="section" id="solusi">
+        <div className="section-inner">
+          <div className="section-header fade-in-section">
+            <span className="section-tag">Solusi Kami</span>
+            <h2 className="section-title">Solusi Cerdas untuk Anda</h2>
+            <p className="section-desc">
+              Fitur lengkap yang dirancang khusus untuk membantu Anda
+              menguasai keuangan pribadi dengan lebih mudah.
+            </p>
+          </div>
+          <div className="solutions-grid">
+            {solutions.map((s, i) => (
+              <div className="solution-card fade-in-section" key={i}>
+                <div className="solution-icon" style={{ background: `${s.color}18` }}>
+                  <span style={{ color: s.color }}>{s.icon}</span>
+                </div>
+                <div className="solution-title">{s.title}</div>
+                <div className="solution-desc">{s.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-12 px-4">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      {/* ── How It Works ── */}
+      <section className="section howitworks" id="cara-kerja">
+        <div className="section-inner">
+          <div className="section-header fade-in-section">
+            <span className="section-tag">Cara Kerja</span>
+            <h2 className="section-title">Cara Kerja</h2>
+            <p className="section-desc">
+              Hanya 3 langkah sederhana untuk mulai mengelola keuangan
+              Anda dengan lebih bijak.
+            </p>
+          </div>
+          <div className="steps-grid">
+            {steps.map((s, i) => (
+              <div className="step-card fade-in-section" key={i}>
+                <div className="step-num">{s.num}</div>
+                <div className="step-title">{s.title}</div>
+                <div className="step-desc">{s.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="cta">
+        <div className="cta-inner fade-in-section">
+          <h2 className="cta-title">Siap untuk Mengatur Masa Depan Finansialmu?</h2>
+          <p className="cta-desc">
+            Bergabunglah dengan ribuan pengguna yang telah mempercayakan
+            perencanaan keuangan mereka kepada kami. Mulai gratis hari ini.
+          </p>
+          <button className="btn-white" onClick={() => navigate("/register")}>
+            Mulai Gratis Sekarang <IconArrow />
+          </button>
+          <div className="cta-features">
+            {["Gratis Selamanya", "Tanpa Kartu Kredit", "Data Aman & Terenkripsi"].map((f, i) => (
+              <div className="cta-feat" key={i}>
+                <div className="cta-feat-check"><IconCheck /></div>
+                {f}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="footer">
+        <div className="footer-inner">
+          <div className="footer-top">
             <div>
-              <h3 className="text-xl font-bold mb-4">DanaDiri</h3>
-              <p className="text-gray-400">
-                Aplikasi pencatatan keuangan pribadi yang mudah dan lengkap.
+              <div className="footer-logo">Dana<span>Fit</span></div>
+              <p className="footer-about">
+                Platform keuangan pribadi yang membantu Anda merencanakan
+                masa depan finansial dengan lebih cerdas dan terorganisir.
               </p>
+              <div className="footer-social">
+                <button className="social-btn"><IconInstagram /></button>
+                <button className="social-btn"><IconTwitter /></button>
+                <button className="social-btn"><IconFacebook /></button>
+              </div>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Fitur</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>Pencatatan Transaksi</li>
-                <li>Dashboard & Grafik</li>
-                <li>Kategori Lengkap</li>
-                <li>Ringkasan Keuangan</li>
+              <div className="footer-col-title">Fitur</div>
+              <ul className="footer-links">
+                {["Pencatatan","Anggaran","Grafik","Tabungan"].map(l => (
+                  <li key={l}><a href="#">{l}</a></li>
+                ))}
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Perusahaan</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>Tentang Kami</li>
-                <li>Blog</li>
-                <li>Karir</li>
-                <li>Kontak</li>
+              <div className="footer-col-title">Produk</div>
+              <ul className="footer-links">
+                {["Web App","Mobile","API","Integrasi"].map(l => (
+                  <li key={l}><a href="#">{l}</a></li>
+                ))}
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Dukungan</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>FAQ</li>
-                <li>Pusat Bantuan</li>
-                <li>Privasi</li>
-                <li>Syarat & Ketentuan</li>
+              <div className="footer-col-title">Sosial Media</div>
+              <ul className="footer-links">
+                {["Instagram","Twitter","LinkedIn","YouTube"].map(l => (
+                  <li key={l}><a href="#">{l}</a></li>
+                ))}
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 DanaDiri. All rights reserved.</p>
+          <div className="footer-bottom">
+            <span>© 2026 DanaFit. Semua hak dilindungi.</span>
+            <span>Dibuat dengan  di Indonesia</span>
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
-};
-
-export default Landing;
+}
