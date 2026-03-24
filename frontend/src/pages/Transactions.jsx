@@ -9,6 +9,7 @@ const Transactions = ({ user, setUser }) => {
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
 
@@ -18,10 +19,29 @@ const Transactions = ({ user, setUser }) => {
 
   const fetchTransactions = async () => {
     try {
-      const { data } = await api.get('/transactions');
-      setTransactions(data);
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.get('/transactions');
+      
+      let transactionsData = [];
+      
+      if (Array.isArray(response.data)) {
+        transactionsData = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        transactionsData = response.data.data;
+      } else if (response.data && Array.isArray(response.data.transactions)) {
+        transactionsData = response.data.transactions;
+      } else {
+        transactionsData = [];
+      }
+      
+      setTransactions(transactionsData);
+      
     } catch (error) {
       console.error('Gagal mengambil transaksi:', error);
+      setError(error.response?.data?.message || 'Gagal mengambil data transaksi');
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -30,22 +50,22 @@ const Transactions = ({ user, setUser }) => {
   const handleAddTransaction = async (formData) => {
     try {
       await api.post('/transactions', formData);
-      fetchTransactions();
+      await fetchTransactions();
       setShowForm(false);
     } catch (error) {
       console.error('Gagal menambah transaksi:', error);
-      alert('Gagal menambah transaksi');
+      alert(error.response?.data?.message || 'Gagal menambah transaksi');
     }
   };
 
   const handleUpdateTransaction = async (formData) => {
     try {
       await api.put(`/transactions/${editingTransaction._id}`, formData);
-      fetchTransactions();
+      await fetchTransactions();
       setEditingTransaction(null);
     } catch (error) {
       console.error('Gagal mengupdate transaksi:', error);
-      alert('Gagal mengupdate transaksi');
+      alert(error.response?.data?.message || 'Gagal mengupdate transaksi');
     }
   };
 
@@ -53,15 +73,16 @@ const Transactions = ({ user, setUser }) => {
     if (window.confirm('Yakin ingin menghapus transaksi ini?')) {
       try {
         await api.delete(`/transactions/${id}`);
-        fetchTransactions();
+        await fetchTransactions();
       } catch (error) {
         console.error('Gagal menghapus transaksi:', error);
-        alert('Gagal menghapus transaksi');
+        alert(error.response?.data?.message || 'Gagal menghapus transaksi');
       }
     }
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     const options = { day: 'numeric', month: 'long', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
@@ -77,15 +98,44 @@ const Transactions = ({ user, setUser }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar user={user} setUser={setUser} />
+        <main className="flex-1 p-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Gagal Memuat Data</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={fetchTransactions}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar user={user} setUser={setUser} />
       
-      {/* Main Content */}
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Daftar Transaksi</h1>
+            <h1 className="text-3xl font-bold text-gray-800">
+              Daftar Transaksi
+              {transactions.length > 0 && (
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  ({transactions.length} transaksi)
+                </span>
+              )}
+            </h1>
             <button
               onClick={() => setShowForm(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center"
@@ -97,25 +147,32 @@ const Transactions = ({ user, setUser }) => {
             </button>
           </div>
 
-          {/* Form Tambah/Edit */}
-          {(showForm || editingTransaction) && (
+          {/* Form Tambah */}
+          {showForm && (
             <div className="mb-8 bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">
-                {editingTransaction ? 'Edit Transaksi' : 'Tambah Transaksi Baru'}
-              </h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-800">Tambah Transaksi Baru</h2>
+              <TransactionForm
+                initialData={{}}
+                onSubmit={handleAddTransaction}
+                onCancel={() => setShowForm(false)}
+              />
+            </div>
+          )}
+
+          {/* Form Edit */}
+          {editingTransaction && (
+            <div className="mb-8 bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">Edit Transaksi</h2>
               <TransactionForm
                 initialData={editingTransaction}
-                onSubmit={editingTransaction ? handleUpdateTransaction : handleAddTransaction}
-                onCancel={() => {
-                  setShowForm(false);
-                  setEditingTransaction(null);
-                }}
+                onSubmit={handleUpdateTransaction}
+                onCancel={() => setEditingTransaction(null)}
               />
             </div>
           )}
 
           {/* Daftar Transaksi */}
-          {transactions.length === 0 ? (
+          {!Array.isArray(transactions) || transactions.length === 0 ? (
             <div className="bg-white rounded-xl shadow-md p-12 text-center">
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -135,24 +192,12 @@ const Transactions = ({ user, setUser }) => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tanggal
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Deskripsi
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Kategori
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tipe
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Jumlah
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Aksi
-                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -168,20 +213,16 @@ const Transactions = ({ user, setUser }) => {
                           {transaction.category}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              transaction.type === 'income'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            transaction.type === 'income'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
                             {transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <span
-                            className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}
-                          >
+                          <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
                             {formatRupiah(transaction.amount)}
                           </span>
                         </td>
