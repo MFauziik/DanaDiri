@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json()); // untuk parsing application/json
 
 // Routes
-app.use('/api/insight', insightRoutes);
+app.use('/api/insights', insightRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);

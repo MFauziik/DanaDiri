@@ -10,26 +10,110 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = ({ user, setUser }) => {
   const navigate = useNavigate();
+  
+  // State untuk data transaksi
   const [summary, setSummary] = useState({
     totalIncome: 0,
     totalExpense: 0,
     balance: 0,
     categoryExpense: {},
   });
+  
+  // State untuk budget
+  const [budgetData, setBudgetData] = useState({
+    budget: 0,
+    spent: 0,
+    remaining: 0,
+  });
+  
+  // State untuk insights
+  const [insights, setInsights] = useState({
+    income: 0,
+    expense: 0,
+    balance: 0,
+    budget: 0,
+    status: 'AMAN',
+    message: '',
+  });
+  
+  const [budgetAmount, setBudgetAmount] = useState('');
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [savingBudget, setSavingBudget] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+const fetchData = async () => {
+  try {
+    setLoading(true);
+    
+    // Ambil data transaksi summary
+    const response = await api.get('/transactions/summary');
+    setSummary(response.data);
+    
+    // Ambil data budget
     try {
-      const response = await api.get('/transactions/summary');
-      setSummary(response.data);
+      const budgetRes = await api.get('/budget');
+      setBudgetData(budgetRes.data);
+      if (budgetRes.data.budget > 0) {
+        setBudgetAmount(budgetRes.data.budget.toString());
+      }
     } catch (error) {
-      console.error('Gagal mengambil data:', error);
+      console.error('Gagal mengambil budget:', error);
+      console.error('Error detail:', error.response?.status, error.response?.data);
+      // Jika endpoint belum ada, tampilkan pesan default
+      setBudgetData({ budget: 0, spent: 0, remaining: 0 });
+    }
+    
+    // Ambil data insights
+    try {
+      const insightsRes = await api.get('/insights');
+      console.log('Insights response:', insightsRes.data); // Debug
+      setInsights(insightsRes.data);
+    } catch (error) {
+      console.error('Gagal mengambil insights:', error);
+      console.error('Error detail:', error.response?.status, error.response?.data);
+      // Jika endpoint belum ada, tampilkan pesan default
+      setInsights({
+        income: summary.totalIncome || 0,
+        expense: summary.totalExpense || 0,
+        balance: summary.balance || 0,
+        budget: 0,
+        status: 'AMAN',
+        message: 'Belum ada data wawasan. Tambahkan transaksi untuk melihat wawasan.',
+      });
+    }
+    
+  } catch (error) {
+    console.error('Gagal mengambil data transaksi:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // Handle simpan budget
+  const handleSetBudget = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(budgetAmount);
+    
+    if (isNaN(amount) || amount <= 0) {
+      alert('Masukkan jumlah budget yang valid');
+      return;
+    }
+
+    try {
+      setSavingBudget(true);
+      await api.post('/budget', { amount });
+      await fetchData();
+      setShowBudgetForm(false);
+      alert('Budget berhasil disimpan!');
+    } catch (error) {
+      console.error('Gagal menyimpan budget:', error);
+      alert(error.response?.data?.message || 'Gagal menyimpan budget');
     } finally {
-      setLoading(false);
+      setSavingBudget(false);
     }
   };
 
@@ -41,15 +125,8 @@ const Dashboard = ({ user, setUser }) => {
         label: 'Pengeluaran per Kategori',
         data: Object.values(summary.categoryExpense),
         backgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#FFCE56',
-          '#4BC0C0',
-          '#9966FF',
-          '#FF9F40',
-          '#E7E9ED',
-          '#76A346',
-          '#C45850',
+          '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+          '#FF9F40', '#E7E9ED', '#76A346', '#C45850',
         ],
         hoverOffset: 4,
       },
@@ -59,14 +136,29 @@ const Dashboard = ({ user, setUser }) => {
   const pieOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'bottom',
-      },
-      title: {
-        display: true,
-        text: 'Pengeluaran per Kategori',
-      },
+      legend: { position: 'bottom' },
+      title: { display: true, text: 'Pengeluaran per Kategori' },
     },
+  };
+
+  // Hitung progress budget
+  const budgetProgress = budgetData.budget > 0 
+    ? (budgetData.spent / budgetData.budget) * 100 
+    : 0;
+
+  const getBudgetProgressColor = () => {
+    if (budgetProgress >= 100) return 'bg-red-500';
+    if (budgetProgress >= 80) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+
+  const getStatusColor = () => {
+    switch (insights.status) {
+      case 'AMAN': return 'text-green-600 bg-green-50 border-green-200';
+      case 'WARNING': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'OVER': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
   };
 
   if (loading) {
@@ -84,7 +176,6 @@ const Dashboard = ({ user, setUser }) => {
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar user={user} setUser={setUser} />
       
-      {/* Main Content */}
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
@@ -99,7 +190,7 @@ const Dashboard = ({ user, setUser }) => {
             </div>
           </div>
 
-          {/* Kartu Ringkasan Keuangan */}
+          {/* 3 Kartu Ringkasan Utama */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
               <div className="flex items-center justify-between">
@@ -137,7 +228,7 @@ const Dashboard = ({ user, setUser }) => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 uppercase">Saldo</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">
+                  <p className={`text-2xl font-bold mt-2 ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                     {formatRupiah(summary.balance)}
                   </p>
                 </div>
@@ -147,6 +238,164 @@ const Dashboard = ({ user, setUser }) => {
                   </svg>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Budget & Insights Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            {/* Budget Section */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">💰 Anggaran Bulanan</h2>
+                {!showBudgetForm && (
+                  <button
+                    onClick={() => setShowBudgetForm(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    {budgetData.budget > 0 ? 'Ubah' : 'Atur Anggaran'}
+                  </button>
+                )}
+              </div>
+
+              {showBudgetForm ? (
+                <form onSubmit={handleSetBudget} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Jumlah Anggaran (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      value={budgetAmount}
+                      onChange={(e) => setBudgetAmount(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Masukkan jumlah anggaran"
+                      min="0"
+                      step="1000"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Periode: {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      type="submit"
+                      disabled={savingBudget}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {savingBudget ? 'Menyimpan...' : 'Simpan'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowBudgetForm(false)}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  {budgetData.budget > 0 ? (
+                    <>
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div className="bg-blue-50 rounded-lg p-3 text-center">
+                          <p className="text-xs text-gray-600">Anggaran</p>
+                          <p className="text-lg font-bold text-blue-600">{formatRupiah(budgetData.budget)}</p>
+                        </div>
+                        <div className="bg-red-50 rounded-lg p-3 text-center">
+                          <p className="text-xs text-gray-600">Pengeluaran</p>
+                          <p className="text-lg font-bold text-red-600">{formatRupiah(budgetData.spent)}</p>
+                        </div>
+                        <div className={`rounded-lg p-3 text-center ${budgetData.remaining >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                          <p className="text-xs text-gray-600">Sisa</p>
+                          <p className={`text-lg font-bold ${budgetData.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatRupiah(budgetData.remaining)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-2">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Penggunaan</span>
+                          <span className="font-semibold">{budgetProgress.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-500 ${getBudgetProgressColor()}`}
+                            style={{ width: `${Math.min(budgetProgress, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      {budgetProgress >= 80 && (
+                        <p className={`text-sm mt-2 ${budgetProgress >= 100 ? 'text-red-600' : 'text-yellow-600'}`}>
+                          {budgetProgress >= 100 
+                            ? '⚠️ Anggaran telah terlampaui! Periksa kembali pengeluaran Anda.' 
+                            : `⚠️ Perhatian! Sudah mencapai ${budgetProgress.toFixed(1)}% dari anggaran`}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">
+                      Belum ada anggaran untuk bulan ini. Klik "Atur Anggaran" untuk mulai.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Insights Section */}
+            <div className={`rounded-xl shadow-md p-6 border ${getStatusColor()}`}>
+              <h2 className="text-xl font-bold mb-4">📊 Wawasan Keuangan</h2>
+              
+              <div className="flex items-start space-x-4 mb-4">
+                {insights.status === 'AMAN' && (
+                  <svg className="w-12 h-12 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                )}
+                {insights.status === 'WARNING' && (
+                  <svg className="w-12 h-12 text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                )}
+                {insights.status === 'OVER' && (
+                  <svg className="w-12 h-12 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                )}
+                <div>
+                  <p className="font-medium">{insights.message}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3 text-center pt-3 border-t border-gray-200">
+                <div>
+                  <p className="text-xs text-gray-500">Pemasukan</p>
+                  <p className="font-semibold text-green-600">{formatRupiah(insights.income)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Pengeluaran</p>
+                  <p className="font-semibold text-red-600">{formatRupiah(insights.expense)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Saldo</p>
+                  <p className={`font-semibold ${insights.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatRupiah(insights.balance)}
+                  </p>
+                </div>
+              </div>
+              
+              {insights.budget > 0 && (
+                <div className="mt-4 pt-3 border-t border-gray-200">
+                  <div className="flex justify-between text-sm">
+                    <span>Anggaran Bulan Ini</span>
+                    <span className="font-semibold">{formatRupiah(insights.budget)}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Recurring = require('../models/RecurringTransaction');
+const Transaction = require('../models/Transaction');
 
 // GET
 const getRecurring = asyncHandler(async (req, res) => {
