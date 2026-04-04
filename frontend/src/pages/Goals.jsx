@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getGoalsSummary, createGoal, addFunds, deleteGoal, updateGoal } from '../services/goals';
 import { logout } from '../services/auth';
 import GoalForm from '../components/GoalForm';
+import GoalModal from '../components/GoalModal';
 import AddFundsModal from '../components/AddFundsModal';
 import Sidebar from '../components/Sidebar';
 import { GOAL_STATUS } from '../utils/constants';
@@ -239,28 +240,6 @@ const Goals = ({ user, setUser }) => {
           </button>
         </div>
 
-        {/* Form Tambah/Edit Goal */}
-        {showAddForm && (
-          <div className="mb-8 bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Tambah Target Baru</h2>
-            <GoalForm
-              onSubmit={handleCreateGoal}
-              onCancel={() => setShowAddForm(false)}
-            />
-          </div>
-        )}
-
-        {editingGoal && (
-          <div className="mb-8 bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Edit Target</h2>
-            <GoalForm
-              initialData={editingGoal}
-              onSubmit={handleUpdateGoal}
-              onCancel={() => setEditingGoal(null)}
-            />
-          </div>
-        )}
-
         {/* Daftar Goals */}
         {filteredGoals.length === 0 ? (
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
@@ -443,6 +422,17 @@ const Goals = ({ user, setUser }) => {
           </div>
         )}
       </div>
+
+      {/* Goal Modal */}
+      <GoalModal
+        initialData={editingGoal || {}}
+        isOpen={showAddForm || !!editingGoal}
+        onClose={() => {
+          setShowAddForm(false);
+          setEditingGoal(null);
+        }}
+        onSubmit={editingGoal ? handleUpdateGoal : handleCreateGoal}
+      />
 
       {/* Modal Tambah Dana */}
       {showAddFunds && selectedGoal && (
