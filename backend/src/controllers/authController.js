@@ -6,9 +6,9 @@ const generateToken = require('../utils/generateToken');
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, phone, password } = req.body;
 
-  if (!name || !email || !password) {
+  if (!name || !email || !phone || !password) {
     res.status(400);
     throw new Error('Semua field harus diisi');
   }
@@ -22,6 +22,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const user = await User.create({
     name,
     email,
+    phone,
     password,
   });
 
@@ -30,6 +31,7 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       token: generateToken(user._id),
     });
   } else {
@@ -56,6 +58,7 @@ const loginUser = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       token: generateToken(user._id),
     });
   } else {
@@ -83,6 +86,12 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   if (user) {
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
+    user.phone = req.body.phone || user.phone;
+
+    // Handle foto profil jika ada
+    if (req.file) {
+      user.profilePicture = `/uploads/${req.file.filename}`;
+    }
 
     if (req.body.password) {
       user.password = req.body.password;
@@ -94,6 +103,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
+      phone: updatedUser.phone,
+      profilePicture: updatedUser.profilePicture,
       token: generateToken(updatedUser._id),
     });
   } else {

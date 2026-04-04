@@ -17,6 +17,11 @@ const app = express();
 app.use(cors());
 app.use(express.json()); // untuk parsing application/json
 
+const path = require('path');
+
+// Static folder untuk uploads
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // Routes
 app.use('/api/insights', insightRoutes);
 app.use('/api/budget', budgetRoutes);

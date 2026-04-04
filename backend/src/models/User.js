@@ -11,11 +11,14 @@ const userSchema = mongoose.Schema(
       type: String,
       required: [true, 'Email harus diisi'],
       unique: true,
-      lowercase: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        'Email tidak valid',
-      ],
+    },
+    phone: {
+      type: String,
+      required: [true, 'Nomor telepon harus diisi'],
+    },
+    profilePicture: {
+      type: String,
+      default: '',
     },
     password: {
       type: String,

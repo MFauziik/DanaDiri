@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
+import Profile from './pages/Profile';
 import Landing from './pages/Landing';
 import { getProfile } from './services/auth';
 
@@ -70,6 +71,10 @@ function App() {
         <Route
           path="/goals"
           element={user ? <Goals user={user} setUser={setUser} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/profile"
+          element={user ? <Profile user={user} setUser={setUser} /> : <Navigate to="/login" />}
         />
         
         {/* Redirect ke landing page jika path tidak ditemukan */}

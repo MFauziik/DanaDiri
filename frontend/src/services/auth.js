@@ -8,8 +8,8 @@ export const login = async (email, password) => {
   return response.data;
 };
 
-export const register = async (name, email, password) => {
-  const response = await api.post('/auth/register', { name, email, password });
+export const register = async (name, email, phone, password) => {
+  const response = await api.post('/auth/register', { name, email, phone, password });
   if (response.data.token) {
     localStorage.setItem('token', response.data.token);
   }
@@ -22,5 +22,14 @@ export const logout = () => {
 
 export const getProfile = async () => {
   const response = await api.get('/auth/profile');
+  return response.data;
+};
+
+export const updateProfile = async (formData) => {
+  const response = await api.put('/auth/profile', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
