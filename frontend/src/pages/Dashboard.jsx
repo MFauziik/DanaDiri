@@ -173,7 +173,7 @@ const fetchData = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       <Sidebar user={user} setUser={setUser} />
       
       <main className="flex-1 p-8">

@@ -132,7 +132,7 @@ const Transactions = ({ user, setUser }) => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
         <Sidebar user={user} setUser={setUser} />
         <main className="flex-1 p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -154,7 +154,7 @@ const Transactions = ({ user, setUser }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       <Sidebar user={user} setUser={setUser} />
 
       <main className="flex-1 p-8">

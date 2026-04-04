@@ -80,7 +80,7 @@ const Profile = ({ user, setUser }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] flex">
+    <div className="min-h-screen bg-[#F4F7FC] flex flex-col md:flex-row">
       <Sidebar user={user} setUser={setUser} />
 
       <main className="flex-1 p-8">
