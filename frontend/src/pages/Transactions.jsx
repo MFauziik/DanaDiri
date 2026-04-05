@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import TransactionForm from '../components/TransactionForm';
 import Sidebar from '../components/Sidebar';
-import RecurringForm from '../components/RecurringForm';
 import RecurringList from '../components/RecurringList';
+import TransactionModal from '../components/TransactionModal';
+import RecurringModal from '../components/RecurringModal';
 import { getRecurring, createRecurring, deleteRecurring } from '../services/recurring';
 import { formatRupiah } from '../utils/currency';
 
@@ -179,7 +180,7 @@ const Transactions = ({ user, setUser }) => {
                 Transaksi Baru
               </button>
               <button
-                onClick={() => setShowRecurringForm(!showRecurringForm)}
+                onClick={() => setShowRecurringForm(true)}
                 className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,49 +191,9 @@ const Transactions = ({ user, setUser }) => {
             </div>
           </div>
 
-          {/* Form Tambah Transaksi */}
-          {showForm && (
-            <div className="mb-8 bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">
-                Tambah Transaksi Baru
-              </h2>
-              <TransactionForm
-                initialData={{}}
-                onSubmit={handleAddTransaction}
-                onCancel={() => setShowForm(false)}
-              />
-            </div>
-          )}
-
-          {/* Form Edit Transaksi */}
-          {editingTransaction && (
-            <div className="mb-8 bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">
-                Edit Transaksi
-              </h2>
-              <TransactionForm
-                initialData={editingTransaction}
-                onSubmit={handleUpdateTransaction}
-                onCancel={() => setEditingTransaction(null)}
-              />
-            </div>
-          )}
-
-          {/* Form Tambah Transaksi Berulang */}
-          {showRecurringForm && (
-            <div className="mb-8 bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">
-                Tambah Transaksi Berulang
-              </h2>
-              <RecurringForm
-                onSubmit={handleAddRecurring}
-                onCancel={() => setShowRecurringForm(false)}
-              />
-            </div>
-          )}
-
           {/* Daftar Transaksi Berulang */}
           <RecurringList recurrings={recurrings} onDelete={handleDeleteRecurring} />
+
 
           {/* Daftar Transaksi */}
           {!Array.isArray(transactions) || transactions.length === 0 ? (
@@ -336,8 +297,27 @@ const Transactions = ({ user, setUser }) => {
           )}
         </div>
       </main>
+
+      {/* Transaction Modal */}
+      <TransactionModal
+        initialData={editingTransaction || {}}
+        isOpen={showForm || !!editingTransaction}
+        onClose={() => {
+          setShowForm(false);
+          setEditingTransaction(null);
+        }}
+        onSubmit={editingTransaction ? handleUpdateTransaction : handleAddTransaction}
+      />
+
+      {/* Recurring Modal */}
+      <RecurringModal
+        isOpen={showRecurringForm}
+        onClose={() => setShowRecurringForm(false)}
+        onSubmit={handleAddRecurring}
+      />
     </div>
   );
 };
 
 export default Transactions;
+
