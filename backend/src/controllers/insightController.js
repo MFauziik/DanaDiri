@@ -21,22 +21,30 @@ const getInsights = asyncHandler(async (req, res) => {
   });
 
   const balance = income - expense;
+  const savingPercentage = income > 0 ? (balance / income) * 100 : 0;
+
+  let status = 'Sangat Sehat';
+  let message = 'Keuangan kamu sangat stabil! Kamu berhasil menyisihkan banyak tabungan 💰';
+
+  if (expense >= income && income > 0) {
+    status = 'Bahaya';
+    message = 'Pengeluaran kamu melebihi pemasukan! Segera evaluasi keuangan 🚨';
+  } else if (income === 0 && expense > 0) {
+    status = 'Bahaya';
+    message = 'Kamu belum memiliki pemasukan tapi sudah ada pengeluaran! 🚨';
+  } else if (income === 0 && expense === 0) {
+    status = 'Cukup';
+    message = 'Belum ada aktivitas keuangan bulan ini. Yuk, catat transaksi pertamamu! ✨';
+  } else if (savingPercentage < 20) {
+    status = 'Waspada';
+    message = 'Pengeluaran kamu mulai tinggi, coba kontrol pengeluaran ⚠️';
+  } else if (savingPercentage < 50) {
+    status = 'Sehat';
+    message = 'Keuangan kamu cukup baik, tapi masih bisa lebih hemat 👍';
+  }
 
   const budgetData = await Budget.findOne({ user: userId });
   const budget = budgetData ? budgetData.amount : 0;
-
-  let status = 'AMAN';
-  let message = 'Pengeluaran kamu masih terkendali 👍';
-
-  if (budget > 0) {
-    if (expense > budget) {
-      status = 'OVER';
-      message = '⚠️ Pengeluaran melebihi budget!';
-    } else if (expense > budget * 0.8) {
-      status = 'WARNING';
-      message = '⚠️ Hampir mencapai batas budget';
-    }
-  }
 
   res.json({
     income,
@@ -45,6 +53,7 @@ const getInsights = asyncHandler(async (req, res) => {
     budget,
     status,
     message,
+    savingPercentage,
   });
 });
 

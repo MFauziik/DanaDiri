@@ -12,24 +12,20 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import {
-  LayoutDashboard,
-  ReceiptText,
-  Target,
-  User,
-  LogOut,
-  Bell,
   TrendingUp,
   TrendingDown,
   Wallet,
   ShoppingCart,
   MoreHorizontal,
   PlusCircle,
+  Target, // Added Target back
   Car,
   Plane,
 } from 'lucide-react';
 
 import api from '../services/api';
 import { formatRupiah } from '../utils/currency';
+import Sidebar from '../components/Sidebar';
 
 ChartJS.register(
   CategoryScale,
@@ -41,6 +37,8 @@ ChartJS.register(
   Filler
 );
 
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+
 const Dashboard = ({ user, setUser }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,44 +48,69 @@ const Dashboard = ({ user, setUser }) => {
     totalExpense: 0,
     balance: 0,
     categoryExpense: {},
+    chartData: [], // Nama diubah dari monthlyData agar lebih generic
   });
-
+  const [chartPeriod, setChartPeriod] = useState('6months');
+  const [insight, setInsight] = useState({
+    income: 0,
+    expense: 0,
+    balance: 0,
+    budget: 0,
+    status: 'AMAN',
+    message: 'Memuat data insight...',
+  });
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [savingGoals, setSavingGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(chartPeriod);
+  }, [chartPeriod]);
 
-  const fetchData = async () => {
-  try {
-    const response = await api.get('/transactions/summary');
+  const fetchData = async (period = '6months') => {
+    try {
+      const [summaryRes, transactionsRes, goalsRes, insightRes] = await Promise.all([
+        api.get(`/transactions/summary?period=${period}`),
+        api.get('/transactions?limit=5'),
+        api.get('/goals/summary'),
+        api.get('/insights'),
+      ]);
 
-    setSummary({
-      totalIncome: response?.data?.totalIncome || 0,
-      totalExpense: response?.data?.totalExpense || 0,
-      balance: response?.data?.balance || 0,
-      categoryExpense: response?.data?.categoryExpense || {},
-    });
-  } catch (error) {
-    console.error('Gagal mengambil data:', error);
+      setSummary({
+        totalIncome: summaryRes?.data?.totalIncome || 0,
+        totalExpense: summaryRes?.data?.totalExpense || 0,
+        balance: summaryRes?.data?.balance || 0,
+        categoryExpense: summaryRes?.data?.categoryExpense || {},
+        chartData: summaryRes?.data?.chartData || [],
+      });
 
-    // fallback biar dashboard tetap muncul walau API error
-    setSummary({
-      totalIncome: 15000000,
-      totalExpense: 8000000,
-      balance: 7000000,
-      categoryExpense: {
-        'Makan & Minum': 1500000,
-        Transportasi: 800000,
-        'Tagihan & Utilitas': 1200000,
-        Hiburan: 400000,
-        Lainnya: 300000,
-      },
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      setInsight({
+        income: insightRes?.data?.income || 0,
+        expense: insightRes?.data?.expense || 0,
+        balance: insightRes?.data?.balance || 0,
+        budget: insightRes?.data?.budget || 0,
+        status: insightRes?.data?.status || 'AMAN',
+        message: insightRes?.data?.message || 'Data belum tersedia',
+      });
+
+      setRecentTransactions(transactionsRes?.data?.transactions || []);
+      setSavingGoals(goalsRes?.data?.goals || []);
+
+    } catch (error) {
+      console.error('Gagal mengambil data:', error);
+
+      // fallback biar dashboard tetap muncul walau API error
+      setSummary({
+        totalIncome: 0,
+        totalExpense: 0,
+        balance: 0,
+        categoryExpense: {},
+        chartData: [],
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -98,78 +121,75 @@ const Dashboard = ({ user, setUser }) => {
   // =========================
   // DATA DUMMY AGAR MIRIP FIGMA
   // =========================
-  const todayIncome = 500000;
-  const todayExpense = 150000;
-  const monthlyIncome = summary.totalIncome || 15000000;
-  const monthlyExpense = summary.totalExpense || 8000000;
+  const todayIncome = 0; 
+  const todayExpense = 0;
+  const monthlyIncome = summary.totalIncome;
+  const monthlyExpense = summary.totalExpense;
 
-  const categoryExpenseData =
-    Object.keys(summary.categoryExpense).length > 0
-      ? summary.categoryExpense
-      : {
-          'Makan & Minum': 1500000,
-          Transportasi: 800000,
-          'Tagihan & Utilitas': 1200000,
-          Hiburan: 400000,
-          Lainnya: 300000,
-        };
+  const categoryExpenseData = summary.categoryExpense || {};
 
   const totalCategoryExpense = Object.values(categoryExpenseData).reduce(
     (acc, curr) => acc + curr,
     0
   );
 
- const chartData = {
-  labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN'],
-  datasets: [
-    {
-      label: 'Pendapatan',
-      data: [4500000, 6500000, 9000000, 7000000, 12000000, 15000000],
-      borderColor: '#2563EB',
-      backgroundColor: (context) => {
-        const chart = context.chart;
-        const { ctx, chartArea } = chart;
-        if (!chartArea) return null;
+  const chartData = {
+    labels: summary.chartData.length > 0 
+      ? summary.chartData.map(d => d.label) 
+      : ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN'],
+    datasets: [
+      {
+        label: 'Pendapatan',
+        data: summary.chartData.length > 0 
+          ? summary.chartData.map(d => d.income) 
+          : [0, 0, 0, 0, 0, 0],
+        borderColor: '#2563EB',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return null;
 
-        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.35)');
-        gradient.addColorStop(1, 'rgba(37, 99, 235, 0.02)');
-        return gradient;
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, 'rgba(37, 99, 235, 0.35)');
+          gradient.addColorStop(1, 'rgba(37, 99, 235, 0.02)');
+          return gradient;
+        },
+        tension: 0.45,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        pointBackgroundColor: '#2563EB',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        borderWidth: 4,
+        fill: true,
       },
-      tension: 0.45,
-      pointRadius: 4,
-      pointHoverRadius: 7,
-      pointBackgroundColor: '#2563EB',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      borderWidth: 4,
-      fill: true,
-    },
-    {
-      label: 'Pengeluaran',
-      data: [2500000, 3500000, 5000000, 4200000, 6000000, 8000000],
-      borderColor: '#F43F5E',
-      backgroundColor: (context) => {
-        const chart = context.chart;
-        const { ctx, chartArea } = chart;
-        if (!chartArea) return null;
+      {
+        label: 'Pengeluaran',
+        data: summary.chartData.length > 0 
+          ? summary.chartData.map(d => d.expense) 
+          : [0, 0, 0, 0, 0, 0],
+        borderColor: '#F43F5E',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return null;
 
-        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-        gradient.addColorStop(0, 'rgba(244, 63, 94, 0.25)');
-        gradient.addColorStop(1, 'rgba(244, 63, 94, 0.02)');
-        return gradient;
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, 'rgba(244, 63, 94, 0.25)');
+          gradient.addColorStop(1, 'rgba(244, 63, 94, 0.02)');
+          return gradient;
+        },
+        tension: 0.45,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        pointBackgroundColor: '#F43F5E',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        borderWidth: 4,
+        fill: true,
       },
-      tension: 0.45,
-      pointRadius: 4,
-      pointHoverRadius: 7,
-      pointBackgroundColor: '#F43F5E',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      borderWidth: 4,
-      fill: true,
-    },
-  ],
-};
+    ],
+  };
 
   const chartOptions = {
   responsive: true,
@@ -247,124 +267,63 @@ const Dashboard = ({ user, setUser }) => {
     },
   },
 };
-  const recentTransactions = [
-    {
-      date: '12 Jun 2024',
-      category: 'Makan Siang',
-      type: 'Pengeluaran',
-      amount: -55000,
-      icon: '🍴',
-    },
-    {
-      date: '11 Jun 2024',
-      category: 'Gaji Bulanan',
-      type: 'Pendapatan',
-      amount: 15000000,
-      icon: '💼',
-    },
-    {
-      date: '10 Jun 2024',
-      category: 'Token Listrik',
-      type: 'Pengeluaran',
-      amount: -200000,
-      icon: '⚡',
-    },
-  ];
-
-  const savingGoals = [
-    {
-      name: 'Mobil Baru',
-      target: 250000000,
-      saved: 112500000,
-      percentage: 45,
-      remaining: '18 Bulan',
-      icon: <Car size={16} className="text-blue-600" />,
-      bg: 'bg-blue-50',
-      bar: 'bg-blue-600',
-    },
-    {
-      name: 'Liburan Jepang',
-      target: 30000000,
-      saved: 24000000,
-      percentage: 80,
-      remaining: '2 Bulan',
-      icon: <Plane size={16} className="text-purple-600" />,
-      bg: 'bg-purple-50',
-      bar: 'bg-purple-600',
-    },
-  ];
+  // Goals removed dummy, using state savingGoals
 // =========================
 // FINANCIAL INSIGHT LOGIC
 // =========================
-const totalIncome = summary.totalIncome || 5000000;
-const totalExpense = summary.totalExpense || 4200000;
-const saving = totalIncome - totalExpense;
+// =========================
+// FINANCIAL INSIGHT LOGIC (Backend Driven)
+// =========================
+const totalIncomeInsight = insight.income;
+const totalExpenseInsight = insight.expense;
+const savingInsight = insight.balance;
 
-const savingPercentage =
-  totalIncome > 0 ? (saving / totalIncome) * 100 : 0;
+// Hitung persentase berdasarkan budget jika tersedia, fallback ke pendapatan
+const divisor = insight.budget > 0 ? insight.budget : (totalIncomeInsight > 0 ? totalIncomeInsight : 1);
+const expensePercentage = (totalExpenseInsight / divisor) * 100;
+const savingPercentage = totalIncomeInsight > 0 ? (savingInsight / totalIncomeInsight) * 100 : 0;
 
-const expensePercentage =
-  totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
-  const expenseBarWidth = Math.min(expensePercentage, 100);
-  const displaySavingPercentage = Math.max(savingPercentage, 0);
+const expenseBarWidth = Math.min(expensePercentage, 100);
+const displaySavingPercentage = Math.max(savingPercentage, 0);
 
-let financialStatus = 'Sehat';
-let financialMessage =
-  'Keuangan kamu cukup baik, tapi masih bisa lebih hemat 👍';
-let statusColor = 'bg-green-100 text-green-700';
-let progressColor = 'bg-green-500';
+let statusColor = 'bg-emerald-100 text-emerald-700';
+let progressColor = 'bg-emerald-500';
 let statusIcon = '🟢';
 
-if (totalExpense > totalIncome) {
-  financialStatus = 'Bahaya';
-  financialMessage =
-    'Pengeluaran kamu melebihi pemasukan! Segera evaluasi keuangan 🚨';
-  statusColor = 'bg-red-100 text-red-700';
-  progressColor = 'bg-red-500';
+if (insight.status === 'Bahaya') {
+  statusColor = 'bg-rose-100 text-rose-700';
+  progressColor = 'bg-rose-500';
   statusIcon = '🔴';
-} else if (savingPercentage >= 50) {
-  financialStatus = 'Sangat Sehat';
-  financialMessage =
-    'Keuangan kamu sangat stabil! Kamu berhasil menyisihkan banyak tabungan 💰';
+} else if (insight.status === 'Waspada' || insight.status === 'WARNING') {
+  statusColor = 'bg-amber-100 text-amber-700';
+  progressColor = 'bg-amber-500';
+  statusIcon = '🟡';
+} else if (insight.status === 'Sehat') {
+  statusColor = 'bg-blue-100 text-blue-700';
+  progressColor = 'bg-blue-500';
+  statusIcon = '🔵';
+} else if (insight.status === 'Sangat Sehat' || insight.status === 'AMAN') {
   statusColor = 'bg-emerald-100 text-emerald-700';
   progressColor = 'bg-emerald-500';
   statusIcon = '🟢';
-} else if (savingPercentage >= 20 && savingPercentage < 50) {
-  financialStatus = 'Sehat';
-  financialMessage =
-    'Keuangan kamu cukup baik, tapi masih bisa lebih hemat 👍';
-  statusColor = 'bg-green-100 text-green-700';
-  progressColor = 'bg-green-500';
-  statusIcon = '🟢';
-} else if (savingPercentage < 20) {
-  financialStatus = 'Waspada';
-  financialMessage =
-    'Pengeluaran kamu mulai tinggi, coba kontrol pengeluaran ⚠️';
-  statusColor = 'bg-yellow-100 text-yellow-700';
-  progressColor = 'bg-yellow-500';
-  statusIcon = '🟡';
+} else if (insight.status === 'Cukup') {
+  statusColor = 'bg-slate-100 text-slate-700';
+  progressColor = 'bg-slate-500';
+  statusIcon = '⚪';
 }
   const stats = [
     {
-      title: 'Pendapatan Hari Ini',
-      value: formatRupiah(todayIncome),
-      icon: <TrendingUp size={16} className="text-emerald-500" />,
-      iconBg: 'bg-emerald-50',
-      badge: '+5%',
-      badgeColor: 'text-emerald-500 bg-emerald-50',
-    },
-    {
-      title: 'Pengeluaran Hari Ini',
-      value: formatRupiah(todayExpense),
-      icon: <TrendingDown size={16} className="text-rose-500" />,
-      iconBg: 'bg-rose-50',
-      badge: '-2%',
-      badgeColor: 'text-rose-500 bg-rose-50',
+      title: 'Total Saldo Anda',
+      value: formatRupiah(summary.balance),
+      icon: <Wallet size={16} className="text-blue-600" />,
+      iconBg: 'bg-blue-50',
+      badge: 'Aktif',
+      badgeColor: 'text-blue-600 bg-blue-50',
     },
     {
       title: 'Pendapatan Bulanan',
       value: formatRupiah(monthlyIncome),
-      icon: <Wallet size={16} className="text-emerald-500" />,
+      icon: <TrendingUp size={16} className="text-emerald-500" />,
       iconBg: 'bg-emerald-50',
       badge: '+12%',
       badgeColor: 'text-emerald-500 bg-emerald-50',
@@ -379,28 +338,7 @@ if (totalExpense > totalIncome) {
     },
   ];
 
-  const menus = [
-    {
-      label: 'Dashboard',
-      icon: <LayoutDashboard size={16} />,
-      path: '/dashboard',
-    },
-    {
-      label: 'Transaksi',
-      icon: <ReceiptText size={16} />,
-      path: '/transactions',
-    },
-    {
-      label: 'Target Tabungan',
-      icon: <Target size={16} />,
-      path: '/goals',
-    },
-    {
-      label: 'Profil',
-      icon: <User size={16} />,
-      path: '/profile',
-    },
-  ];
+  // menus removed, using Sidebar component
 
   if (loading) {
     return (
@@ -416,65 +354,7 @@ if (totalExpense > totalIncome) {
   return (
     <div className="min-h-screen bg-[#F6F8FC] flex">
       {/* SIDEBAR */}
-      <aside className="hidden lg:flex w-[250px] min-h-screen bg-white border-r border-slate-200 px-5 py-6 flex-col">
-
-  {/* Logo */}
-  <div className="mb-8">
-    <div className="flex items-center gap-3">
-      <img
-        src="/logo.png"
-        alt="Logo DanaDiri"
-        className="w-11 h-11 object-contain rounded-xl"
-      />
-
-      <div>
-        <h2 className="text-[20px] font-bold text-slate-800">DanaDiri</h2>
-        <p className="text-[11px] text-slate-400">Manajemen Keuangan</p>
-      </div>
-    </div>
-  </div>
-        {/* Menu */}
-        <nav className="space-y-2">
-          {menus.map((menu) => {
-            const isActive = location.pathname === menu.path;
-
-            return (
-              <button
-                key={menu.label}
-                onClick={() => navigate(menu.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-medium transition-all ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                }`}
-              >
-                {menu.icon}
-                <span>{menu.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <button
-          onClick={handleLogout}
-          className="mt-2 w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-medium text-rose-500 hover:bg-rose-50 transition-all"
-        >
-          <LogOut size={16} />
-          <span>Keluar</span>
-        </button>
-
-        <div className="flex-1" />
-
-        {/* Saran */}
-        <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
-            Saran Keuangan
-          </p>
-          <p className="text-[11px] text-slate-500 leading-relaxed">
-            Pengeluaran hiburan Anda naik 15% dari bulan lalu. Coba batasi minggu ini.
-          </p>
-        </div>
-      </aside>
+      <Sidebar user={user} setUser={setUser} />
 
       {/* MAIN */}
       <main className="flex-1 px-4 md:px-6 lg:px-8 py-6">
@@ -491,31 +371,35 @@ if (totalExpense > totalIncome) {
             </div>
 
             <div className="flex items-center gap-4 self-start md:self-auto">
-              <button className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition">
-                <Bell size={17} />
-              </button>
-
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
                   <p className="text-[12px] font-semibold text-slate-700">
-                    {user?.name || 'Budi Santoso'}
+                    {user?.name || 'User'}
                   </p>
-                  <p className="text-[10px] text-slate-400">Premium Member</p>
                 </div>
 
-                <div className="w-9 h-9 rounded-full bg-amber-200 flex items-center justify-center text-amber-700 font-semibold text-xs">
-                  {(user?.name || 'Budi Santoso')
-                    .split(' ')
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join('')}
+                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-xs overflow-hidden border border-slate-200">
+                  {user?.profilePicture ? (
+                    <img 
+                      src={`${API_BASE_URL}${user.profilePicture}`} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    (user?.name || 'U')
+                      .split(' ')
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
           {/* STATS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
             {stats.map((item, index) => (
               <div
                 key={index}
@@ -554,7 +438,7 @@ if (totalExpense > totalIncome) {
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold w-fit ${statusColor}`}
               >
                 <span>{statusIcon}</span>
-                {financialStatus}
+                {insight.status}
               </span>
             </div>
 
@@ -562,21 +446,21 @@ if (totalExpense > totalIncome) {
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                 <p className="text-[11px] text-slate-400 mb-1">Total Pemasukan</p>
                 <h3 className="text-[22px] font-bold text-slate-800">
-                  {formatRupiah(totalIncome)}
+                  {formatRupiah(totalIncomeInsight)}
                 </h3>
               </div>
 
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                 <p className="text-[11px] text-slate-400 mb-1">Total Pengeluaran</p>
                 <h3 className="text-[22px] font-bold text-slate-800">
-                  {formatRupiah(totalExpense)}
+                  {formatRupiah(totalExpenseInsight)}
                 </h3>
               </div>
 
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                 <p className="text-[11px] text-slate-400 mb-1">Tabungan Bulan Ini</p>
                 <h3 className="text-[22px] font-bold text-slate-800">
-                  {formatRupiah(saving)}
+                  {formatRupiah(savingInsight)}
                 </h3>
               </div>
             </div>
@@ -607,10 +491,10 @@ if (totalExpense > totalIncome) {
 
                 <div>
                   <p className="text-[13px] font-semibold text-slate-800 mb-1">
-                    Tabungan Kamu: {displaySavingPercentage.toFixed(1)}%
+                    Analisis Keuangan
                   </p>
                   <p className="text-[12px] text-slate-500 leading-relaxed">
-                    {financialMessage}
+                    {insight.message}
                   </p>
                 </div>
               </div>
@@ -624,15 +508,25 @@ if (totalExpense > totalIncome) {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <div>
     <h2 className="text-[16px] font-semibold text-slate-800">
-      Pendapatan vs Pengeluaran
+      Arus Keuangan
     </h2>
     <p className="text-[12px] text-slate-400 mt-1">
-      Perbandingan arus keuangan selama 6 bulan terakhir
+      {chartPeriod === 'week' ? 'Breakdown harian 7 hari terakhir' : 
+       chartPeriod === 'month' ? 'Breakdown harian 30 hari terakhir' : 
+       chartPeriod === 'year' ? 'Tren bulanan tahun ini' : 
+       'Tren bulanan 6 bulan terakhir'}
     </p>
   </div>
 
-  <select className="text-[12px] border border-slate-200 rounded-xl px-4 py-2 text-slate-500 bg-slate-50 outline-none">
-    <option>6 Bulan Terakhir</option>
+  <select 
+    value={chartPeriod}
+    onChange={(e) => setChartPeriod(e.target.value)}
+    className="text-[12px] border border-slate-200 rounded-xl px-4 py-2 text-slate-500 bg-slate-50 outline-none cursor-pointer hover:bg-slate-100 transition"
+  >
+    <option value="week">Minggu Ini</option>
+    <option value="month">Bulan Ini</option>
+    <option value="6months">6 Bulan Terakhir</option>
+    <option value="year">Tahun Ini</option>
   </select>
 </div>
 
@@ -702,64 +596,58 @@ if (totalExpense > totalIncome) {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px]">
+                <table className="w-full min-w-[600px]">
                   <thead>
-                    <tr className="text-left text-[10px] uppercase tracking-wide text-slate-400 border-b border-slate-100">
-                      <th className="px-5 py-4 font-semibold">Tanggal</th>
-                      <th className="px-5 py-4 font-semibold">Kategori</th>
-                      <th className="px-5 py-4 font-semibold">Jenis</th>
-                      <th className="px-5 py-4 font-semibold">Jumlah (Rp)</th>
-                      <th className="px-5 py-4 font-semibold text-right">Tindakan</th>
+                    <tr className="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                      <th className="px-6 py-4 font-bold">Tanggal</th>
+                      <th className="px-6 py-4 font-bold">Kategori</th>
+                      <th className="px-6 py-4 font-bold">Jenis</th>
+                      <th className="px-6 py-4 font-bold text-right">Jumlah (Rp)</th>
                     </tr>
                   </thead>
 
-                  <tbody>
+                  <tbody className="divide-y divide-slate-50">
                     {recentTransactions.map((trx, index) => (
                       <tr
-                        key={index}
-                        className="border-b last:border-b-0 border-slate-100 hover:bg-slate-50 transition"
+                        key={trx._id || index}
+                        className="group hover:bg-slate-50/80 transition-all duration-200"
                       >
-                        <td className="px-5 py-5 text-[12px] text-slate-500 whitespace-pre-line">
-                          {trx.date.replace(' ', '\n')}
+                        <td className="px-6 py-4">
+                          <p className="text-[13px] font-medium text-slate-600">
+                            {new Date(trx.date).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </p>
                         </td>
 
-                        <td className="px-5 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-sm">
-                              {trx.icon}
-                            </div>
-                            <span className="text-[13px] font-medium text-slate-700">
-                              {trx.category}
-                            </span>
-                          </div>
+                        <td className="px-6 py-4">
+                          <span className="text-[14px] font-semibold text-slate-800">
+                            {trx.category}
+                          </span>
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-6 py-4">
                           <span
-                            className={`text-[10px] font-semibold px-3 py-1 rounded-full ${
-                              trx.type === 'Pendapatan'
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-tight ${
+                              trx.type === 'income'
                                 ? 'bg-emerald-50 text-emerald-600'
                                 : 'bg-rose-50 text-rose-600'
                             }`}
                           >
-                            {trx.type}
+                            {trx.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
                           </span>
                         </td>
 
                         <td
-                          className={`px-5 py-5 text-[13px] font-semibold ${
-                            trx.amount > 0 ? 'text-emerald-600' : 'text-slate-800'
+                          className={`px-6 py-4 text-[14px] font-bold text-right ${
+                            trx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'
                           }`}
                         >
-                          {trx.amount > 0
-                            ? `+${formatRupiah(trx.amount).replace('Rp', 'Rp ')}`
-                            : `-${formatRupiah(Math.abs(trx.amount)).replace('Rp', 'Rp ')}`}
-                        </td>
-
-                        <td className="px-5 py-5 text-right">
-                          <button className="text-slate-400 hover:text-slate-600 transition">
-                            <MoreHorizontal size={17} />
-                          </button>
+                          {trx.type === 'income'
+                            ? `+ ${formatRupiah(trx.amount).replace('Rp', 'Rp')}`
+                            : `- ${formatRupiah(Math.abs(trx.amount)).replace('Rp', 'Rp')}`}
                         </td>
                       </tr>
                     ))}
@@ -781,41 +669,49 @@ if (totalExpense > totalIncome) {
               </div>
 
               <div className="space-y-4">
-                {savingGoals.map((goal, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl bg-slate-50 border border-slate-100 p-4"
-                  >
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className={`w-10 h-10 rounded-xl ${goal.bg} flex items-center justify-center`}>
-                        {goal.icon}
+                {savingGoals.map((goal, index) => {
+                  const percentage = goal.targetAmount > 0 
+                    ? Math.round((goal.currentAmount / goal.targetAmount) * 100) 
+                    : 0;
+                  
+                  return (
+                    <div
+                      key={goal._id || index}
+                      className="rounded-2xl bg-slate-50 border border-slate-100 p-4"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center`}>
+                          <Target size={16} className="text-blue-600" />
+                        </div>
+
+                        <div className="flex-1">
+                          <h3 className="text-[13px] font-semibold text-slate-800">
+                            {goal.name}
+                          </h3>
+                          <p className="text-[11px] text-slate-400">
+                            Target: {formatRupiah(goal.targetAmount)}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="flex-1">
-                        <h3 className="text-[13px] font-semibold text-slate-800">
-                          {goal.name}
-                        </h3>
-                        <p className="text-[11px] text-slate-400">
-                          Target: {formatRupiah(goal.target)}
-                        </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-medium text-slate-500">
+                          Progress
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-800">
+                          {percentage}%
+                        </span>
+                      </div>
+
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 rounded-full transition-all duration-700"
+                          style={{ width: `${percentage}%` }}
+                        />
                       </div>
                     </div>
-
-                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden mb-2">
-                      <div
-                        className={`h-full ${goal.bar} rounded-full transition-all duration-700`}
-                        style={{ width: `${goal.percentage}%` }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] text-slate-400">
-                      <span>
-                        {formatRupiah(goal.saved)} ({goal.percentage}%)
-                      </span>
-                      <span>Sisa {goal.remaining}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <button
