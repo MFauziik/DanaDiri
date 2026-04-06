@@ -15,7 +15,6 @@ const getGoals = asyncHandler(async (req, res) => {
 const createGoal = asyncHandler(async (req, res) => {
   const { name, targetAmount, deadline, category, notes } = req.body;
 
-  // Validasi input
   if (!name || !targetAmount || !deadline) {
     res.status(400);
     throw new Error('Field wajib: name, targetAmount, deadline');
@@ -46,17 +45,32 @@ const updateGoal = asyncHandler(async (req, res) => {
     throw new Error('Goal tidak ditemukan');
   }
 
-  // Pastikan goal milik user yang sedang login
   if (goal.user.toString() !== req.user._id.toString()) {
     res.status(401);
     throw new Error('Tidak diizinkan mengupdate goal ini');
   }
 
-  const updatedGoal = await Goal.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true, runValidators: true }
-  );
+  goal.name = req.body.name ?? goal.name;
+  goal.targetAmount = req.body.targetAmount ?? goal.targetAmount;
+  goal.deadline = req.body.deadline ?? goal.deadline;
+  goal.category = req.body.category ?? goal.category;
+  goal.notes = req.body.notes ?? goal.notes;
+  goal.currentAmount = req.body.currentAmount ?? goal.currentAmount;
+
+  // kalau user manual ubah status (misal aktifkan kembali), hormati itu
+  if (req.body.status) {
+    goal.status = req.body.status;
+  } else {
+    // auto status kalau tidak dikirim dari frontend
+    if (goal.currentAmount >= goal.targetAmount) {
+      goal.currentAmount = goal.targetAmount;
+      goal.status = 'completed';
+    } else {
+      goal.status = 'active';
+    }
+  }
+
+  const updatedGoal = await goal.save();
 
   res.json(updatedGoal);
 });
@@ -78,17 +92,20 @@ const addFunds = asyncHandler(async (req, res) => {
     throw new Error('Tidak diizinkan mengupdate goal ini');
   }
 
-  if (amount <= 0) {
+  const numericAmount = Number(amount);
+
+  if (!numericAmount || numericAmount <= 0) {
     res.status(400);
     throw new Error('Jumlah harus lebih dari 0');
   }
 
-  goal.currentAmount += amount;
-  
-  // Cek apakah goal sudah tercapai
+  goal.currentAmount += numericAmount;
+
   if (goal.currentAmount >= goal.targetAmount) {
+    goal.currentAmount = goal.targetAmount;
     goal.status = 'completed';
-    goal.currentAmount = goal.targetAmount; // Set ke target jika kelebihan
+  } else {
+    goal.status = 'active';
   }
 
   await goal.save();
@@ -119,24 +136,18 @@ const deleteGoal = asyncHandler(async (req, res) => {
 // @route   GET /api/goals/summary
 // @access  Private
 const getGoalsSummary = asyncHandler(async (req, res) => {
-  const goals = await Goal.find({ 
-    user: req.user._id,
-    status: 'active'
-  });
+  const goals = await Goal.find({ user: req.user._id }).sort({ deadline: 1 });
+
+  const activeGoalsList = goals.filter((goal) => goal.status === 'active');
+  const completedGoalsList = goals.filter((goal) => goal.status === 'completed');
 
   const totalTarget = goals.reduce((sum, goal) => sum + goal.targetAmount, 0);
   const totalCurrent = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
   const totalProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
-  const activeGoals = goals.length;
-  const completedGoals = await Goal.countDocuments({ 
-    user: req.user._id, 
-    status: 'completed' 
-  });
-
   res.json({
-    activeGoals,
-    completedGoals,
+    activeGoals: activeGoalsList.length,
+    completedGoals: completedGoalsList.length,
     totalTarget,
     totalCurrent,
     totalProgress,
