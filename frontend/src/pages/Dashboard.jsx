@@ -352,17 +352,17 @@ if (insight.status === 'Bahaya') {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F8FC] flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       {/* SIDEBAR */}
       <Sidebar user={user} setUser={setUser} />
 
       {/* MAIN */}
-      <main className="flex-1 px-4 md:px-6 lg:px-8 py-6">
+      <main className="flex-1 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {/* HEADER */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 mb-8">
             <div>
-              <h1 className="text-[28px] font-bold text-slate-800 leading-tight">
+              <h1 className="text-[24px] md:text-[28px] font-bold text-slate-800 leading-tight">
                 Dashboard Keuangan
               </h1>
               <p className="text-[13px] text-slate-400 mt-1">
@@ -370,7 +370,7 @@ if (insight.status === 'Bahaya') {
               </p>
             </div>
 
-            <div className="flex items-center gap-4 self-start md:self-auto">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
                   <p className="text-[12px] font-semibold text-slate-700">
