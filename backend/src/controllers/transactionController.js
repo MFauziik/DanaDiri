@@ -141,12 +141,76 @@ const deleteTransaction = asyncHandler(async (req, res) => {
 // @route   GET /api/transactions/summary
 // @access  Private
 const getSummary = asyncHandler(async (req, res) => {
+  const { period = '6months' } = req.query;
   const transactions = await Transaction.find({ user: req.user._id });
 
   let totalIncome = 0;
   let totalExpense = 0;
   const categoryExpense = {};
 
+  const now = new Date();
+  const aggregatedData = [];
+  
+  // LOGIKA AGREGASI (PERIOD)
+  if (period === 'week' || period === 'month') {
+    // HARIAN (Daily)
+    const days = period === 'week' ? 7 : 30;
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      
+      aggregatedData.push({
+        label,
+        income: 0,
+        expense: 0,
+        year: d.getFullYear(),
+        monthNum: d.getMonth(),
+        dayNum: d.getDate()
+      });
+    }
+
+    transactions.forEach(t => {
+      const tDate = new Date(t.date);
+      const data = aggregatedData.find(ad => 
+        ad.year === tDate.getFullYear() && 
+        ad.monthNum === tDate.getMonth() && 
+        ad.dayNum === tDate.getDate()
+      );
+      if (data) {
+        if (t.type === 'income') data.income += t.amount;
+        else data.expense += t.amount;
+      }
+    });
+
+  } else {
+    // BULANAN (Monthly)
+    const months = period === '6months' ? 6 : 12;
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleString('id-ID', { month: 'short' }).toUpperCase();
+      
+      aggregatedData.push({
+        label,
+        income: 0,
+        expense: 0,
+        year: d.getFullYear(),
+        monthNum: d.getMonth()
+      });
+    }
+
+    transactions.forEach(t => {
+      const tDate = new Date(t.date);
+      const data = aggregatedData.find(ad => 
+        ad.year === tDate.getFullYear() && ad.monthNum === tDate.getMonth()
+      );
+      if (data) {
+        if (t.type === 'income') data.income += t.amount;
+        else data.expense += t.amount;
+      }
+    });
+  }
+
+  // TOTAL & CATEGORY (Semua transaksi untuk summary dashboard)
   transactions.forEach((t) => {
     if (t.type === 'income') {
       totalIncome += t.amount;
@@ -168,6 +232,11 @@ const getSummary = asyncHandler(async (req, res) => {
     totalExpense,
     balance,
     categoryExpense,
+    chartData: aggregatedData.map(d => ({
+      label: d.label,
+      income: d.income,
+      expense: d.expense
+    }))
   });
 });
 
