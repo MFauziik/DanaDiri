@@ -208,28 +208,134 @@ const Transactions = ({ user, setUser }) => {
   ]);
 
   const getRecurringIcon = (category = '') => {
-    const lower = category.toLowerCase();
+  const lower = category.toLowerCase();
 
-    if (lower.includes('gaji')) return '💵';
-    if (lower.includes('internet') || lower.includes('wifi')) return '📶';
-    if (lower.includes('asuransi')) return '🛡️';
-    if (lower.includes('listrik')) return '⚡';
-    if (lower.includes('air')) return '💧';
-    if (lower.includes('makan')) return '🍽️';
-    if (lower.includes('transport')) return '🚗';
-    return '💳';
-  };
+  // GAJI / UANG
+  if (lower.includes('gaji')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-3 0-5 1.5-5 4s2 4 5 4 5-1.5 5-4-2-4-5-4z" />
+      </svg>
+    );
+  }
 
-  const getCategoryIcon = (category = '') => {
-    const lower = category.toLowerCase();
+  // INTERNET
+  if (lower.includes('internet') || lower.includes('wifi')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 16.5a5 5 0 017 0M5 12a10 10 0 0114 0M2 8a15 15 0 0120 0" />
+      </svg>
+    );
+  }
 
-    if (lower.includes('makan')) return '🍽️';
-    if (lower.includes('bonus')) return '🏠';
-    if (lower.includes('service')) return '🚘';
-    if (lower.includes('asuransi')) return '🛡️';
-    if (lower.includes('gaji')) return '💵';
-    return '📁';
-  };
+  // ASURANSI
+  if (lower.includes('asuransi')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l7 4v5c0 5-3.5 9-7 9s-7-4-7-9V7l7-4z" />
+      </svg>
+    );
+  }
+
+  // LISTRIK
+  if (lower.includes('listrik')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 2L3 14h7v8l10-12h-7z" />
+      </svg>
+    );
+  }
+
+  // AIR
+  if (lower.includes('air')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3C8 8 6 10 6 13a6 6 0 0012 0c0-3-2-5-6-10z" />
+      </svg>
+    );
+  }
+
+  // MAKANAN
+  if (lower.includes('makan')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 3v7a4 4 0 004 4v7M8 3v7M12 3v18" />
+      </svg>
+    );
+  }
+
+  // TRANSPORT
+  if (lower.includes('transport')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13l2-5h14l2 5M5 13v6M19 13v6M5 19h14" />
+      </svg>
+    );
+  }
+
+  // DEFAULT (KARTU)
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+    </svg>
+  );
+};
+
+  const getCategoryIcon = (category = '') => { 
+  const lower = category.toLowerCase();
+
+  // MAKANAN
+  if (lower.includes('makan')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 3v7a4 4 0 004 4v7M8 3v7M12 3v18" />
+      </svg>
+    );
+  }
+
+  // BONUS / RUMAH
+  if (lower.includes('bonus')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10l9-6 9 6M4 10h16v10H4z" />
+      </svg>
+    );
+  }
+
+  // SERVICE / MOBIL
+  if (lower.includes('service')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13l2-5h14l2 5M5 13v6M19 13v6M5 19h14" />
+      </svg>
+    );
+  }
+
+  // ASURANSI
+  if (lower.includes('asuransi')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l7 4v5c0 5-3.5 9-7 9s-7-4-7-9V7l7-4z" />
+      </svg>
+    );
+  }
+
+  // GAJI
+  if (lower.includes('gaji')) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <circle cx="12" cy="12" r="4" />
+      </svg>
+    );
+  }
+
+  // DEFAULT
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+};
 
   if (loading) {
     return (
@@ -289,7 +395,9 @@ const Transactions = ({ user, setUser }) => {
                 onClick={() => setShowRecurringForm(true)}
                 className="h-12 px-5 rounded-xl border border-[#2f6df6] text-[#2f6df6] bg-white hover:bg-blue-50 transition font-semibold text-sm shadow-sm flex items-center justify-center gap-2"
               >
-                <span className="text-lg">📄</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z" />
+</svg>
                 Tambah Transaksi Berulang
               </button>
 
@@ -351,7 +459,9 @@ const Transactions = ({ user, setUser }) => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-full bg-[#eef4ff] flex items-center justify-center text-xl">
-                    🏦
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10l9-6 9 6M4 10h16v10H4zM10 14h4" />
+</svg>
                   </div>
                   <div>
                     <p className="text-xs text-[#8b95a7] font-medium">
@@ -372,7 +482,9 @@ const Transactions = ({ user, setUser }) => {
           {/* RECURRING SECTION */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-[#2f6df6] text-lg">✦</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2f6df6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
+</svg>
               <h2 className="text-[18px] font-bold text-[#1f2a44]">
                 Transaksi Berulang
               </h2>
@@ -444,7 +556,9 @@ const Transactions = ({ user, setUser }) => {
                 <div className="flex flex-col md:flex-row gap-3 w-full">
                   <div className="relative w-full md:max-w-[260px]">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#98a2b3] text-sm">
-                      🔍
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#98a2b3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M16 10a6 6 0 11-12 0 6 6 0 0112 0z" />
+</svg>
                     </span>
                     <input
                       type="text"
@@ -500,7 +614,7 @@ const Transactions = ({ user, setUser }) => {
             {/* TABLE */}
             {filteredTransactions.length === 0 ? (
               <div className="p-12 text-center">
-                <div className="text-5xl mb-4">📄</div>
+                
                 <h3 className="text-xl font-semibold text-[#344054] mb-2">
                   Belum Ada Transaksi
                 </h3>
