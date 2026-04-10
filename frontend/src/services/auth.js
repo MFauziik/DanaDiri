@@ -33,3 +33,18 @@ export const updateProfile = async (formData) => {
   });
   return response.data;
 };
+
+export const forgotPassword = async (email) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const verifyOTP = async (email, otp) => {
+  const response = await api.post('/auth/verify-otp', { email, otp });
+  return response.data;
+};
+
+export const resetPassword = async (email, otp, password) => {
+  const response = await api.post('/auth/reset-password', { email, otp, password });
+  return response.data;
+};
