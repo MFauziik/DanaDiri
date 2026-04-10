@@ -7,6 +7,9 @@ import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
 import Profile from './pages/Profile';
 import Landing from './pages/Landing';
+import ForgotPassword from './pages/ForgotPassword';
+import VerifyOTP from './pages/VerifyOTP';
+import ResetPassword from './pages/ResetPassword';
 import { getProfile } from './services/auth';
 
 function App() {
@@ -57,6 +60,18 @@ function App() {
         <Route
           path="/register"
           element={user ? <Navigate to="/dashboard" /> : <Register setUser={setUser} />}
+        />
+        <Route
+          path="/forgot-password"
+          element={user ? <Navigate to="/dashboard" /> : <ForgotPassword />}
+        />
+        <Route
+          path="/verify-otp"
+          element={user ? <Navigate to="/dashboard" /> : <VerifyOTP />}
+        />
+        <Route
+          path="/reset-password"
+          element={user ? <Navigate to="/dashboard" /> : <ResetPassword />}
         />
         
         {/* Protected Pages - Hanya bisa diakses jika sudah login */}

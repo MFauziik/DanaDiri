@@ -74,7 +74,7 @@ const Login = ({ setUser }) => {
                 <label className="block text-sm font-semibold text-slate-700" htmlFor="password">
                   Kata Sandi
                 </label>
-                <Link to="#" className="text-xs font-semibold text-secondary hover:text-blue-700 transition">
+                <Link to="/forgot-password" size="sm" className="text-xs font-semibold text-secondary hover:text-blue-700 transition">
                   Lupa sandi?
                 </Link>
               </div>
