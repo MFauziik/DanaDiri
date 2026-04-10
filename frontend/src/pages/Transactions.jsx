@@ -13,6 +13,8 @@ import { formatRupiah } from '../utils/currency';
 const Transactions = ({ user, setUser }) => {
   const [transactions, setTransactions] = useState([]);
   const [recurrings, setRecurrings] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -29,6 +31,44 @@ const Transactions = ({ user, setUser }) => {
   useEffect(() => {
     fetchAllData();
   }, []);
+   const filteredTransactions = useMemo(() => {
+  return transactions.filter((transaction) => {
+    const matchesSearch =
+      !searchTerm ||
+      transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.category?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const transactionDate = transaction.date
+      ? new Date(transaction.date)
+      : null;
+
+    const transactionMonth = transactionDate
+      ? `${transactionDate.getFullYear()}-${String(
+          transactionDate.getMonth() + 1
+        ).padStart(2, '0')}`
+      : '';
+
+    const matchesMonth =
+      !selectedMonth || transactionMonth === selectedMonth;
+
+    const matchesCategory =
+      !selectedCategory || transaction.category === selectedCategory;
+
+    const matchesType =
+      !selectedType || transaction.type === selectedType;
+
+    return (
+      matchesSearch &&
+      matchesMonth &&
+      matchesCategory &&
+      matchesType
+    );
+  });
+}, [transactions, searchTerm, selectedMonth, selectedCategory, selectedType]);
+
+  useEffect(() => {
+  setCurrentPage(1);
+}, [filteredTransactions]);
 
   const fetchAllData = async () => {
     try {
@@ -166,49 +206,20 @@ const Transactions = ({ user, setUser }) => {
   const uniqueCategories = [
     ...new Set(transactions.map((t) => t.category).filter(Boolean)),
   ];
+  
 
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
-      const matchesSearch =
-        !searchTerm ||
-        transaction.description
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        transaction.category
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase());
+  
+const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
 
-      const transactionDate = transaction.date
-        ? new Date(transaction.date)
-        : null;
-      const transactionMonth = transactionDate
-        ? `${transactionDate.getFullYear()}-${String(
-            transactionDate.getMonth() + 1
-          ).padStart(2, '0')}`
-        : '';
+const paginatedTransactions = useMemo(() => {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  return filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+}, [filteredTransactions, currentPage]);
 
-      const matchesMonth =
-        !selectedMonth || transactionMonth === selectedMonth;
-
-      const matchesCategory =
-        !selectedCategory || transaction.category === selectedCategory;
-
-      const matchesType = !selectedType || transaction.type === selectedType;
-
-      return (
-        matchesSearch && matchesMonth && matchesCategory && matchesType
-      );
-    });
-  }, [
-    transactions,
-    searchTerm,
-    selectedMonth,
-    selectedCategory,
-    selectedType,
-  ]);
-
+    
   const getRecurringIcon = (category = '') => {
   const lower = category.toLowerCase();
+  
 
   // GAJI / UANG
   if (lower.includes('gaji')) {
@@ -347,8 +358,23 @@ const Transactions = ({ user, setUser }) => {
       </div>
     );
   }
+const handleNext = () => {
+  if (currentPage < totalPages) {
+    setCurrentPage(currentPage + 1);
+  }
+};
 
+const handlePrev = () => {
+  if (currentPage > 1) {
+    setCurrentPage(currentPage - 1);
+  }
+};
+
+const handlePageClick = (page) => {
+  setCurrentPage(page);
+};
   if (error) {
+    
     return (
       <div className="min-h-screen bg-[#f7f8fc] flex flex-col md:flex-row">
         <Sidebar user={user} setUser={setUser} />
@@ -652,7 +678,7 @@ const Transactions = ({ user, setUser }) => {
                   </thead>
 
                   <tbody>
-                    {filteredTransactions.map((transaction) => {
+                   {paginatedTransactions.map((transaction) => {
                       const shortDate = formatShortDate(transaction.date);
 
                       return (
@@ -739,25 +765,44 @@ const Transactions = ({ user, setUser }) => {
 
                 {/* PAGINATION VISUAL */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-5 border-t border-[#edf1f7]">
-                  <p className="text-sm text-[#98a2b3]">Halaman 1 dari 1</p>
+                 <p className="text-sm text-[#98a2b3]">
+  Halaman {currentPage} dari {totalPages}
+</p>
 
                   <div className="flex items-center gap-2">
-                    <button className="w-9 h-9 rounded-xl border border-[#e4e7ec] text-[#98a2b3] bg-white">
-                      ‹
-                    </button>
-                    <button className="w-9 h-9 rounded-xl bg-[#2f6df6] text-white font-semibold">
-                      1
-                    </button>
-                    <button className="w-9 h-9 rounded-xl border border-[#e4e7ec] text-[#667085] bg-white">
-                      2
-                    </button>
-                    <button className="w-9 h-9 rounded-xl border border-[#e4e7ec] text-[#667085] bg-white">
-                      3
-                    </button>
-                    <button className="w-9 h-9 rounded-xl border border-[#e4e7ec] text-[#667085] bg-white">
-                      ›
-                    </button>
-                  </div>
+  {/* PREV */}
+  <button
+    onClick={handlePrev}
+    disabled={currentPage === 1}
+    className="w-9 h-9 rounded-xl border border-[#e4e7ec] text-[#667085] bg-white disabled:opacity-50"
+  >
+    ‹
+  </button>
+
+  {/* ANGKA OTOMATIS */}
+  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+    <button
+      key={page}
+      onClick={() => handlePageClick(page)}
+      className={`w-9 h-9 rounded-xl font-semibold ${
+        currentPage === page
+          ? 'bg-[#2f6df6] text-white'
+          : 'border border-[#e4e7ec] text-[#667085] bg-white'
+      }`}
+    >
+      {page}
+    </button>
+  ))}
+
+  {/* NEXT */}
+  <button
+    onClick={handleNext}
+    disabled={currentPage === totalPages}
+    className="w-9 h-9 rounded-xl border border-[#e4e7ec] text-[#667085] bg-white disabled:opacity-50"
+  >
+    ›
+  </button>
+</div>
                 </div>
               </div>
             )}
