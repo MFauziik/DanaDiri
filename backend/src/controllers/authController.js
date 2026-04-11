@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 // @desc    Register user baru
 // @route   POST /api/auth/register
@@ -98,9 +99,15 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.email = req.body.email || user.email;
     user.phone = req.body.phone || user.phone;
 
-    // Handle foto profil jika ada — simpan URL Cloudinary (permanen)
+    // Handle foto profil — upload ke Cloudinary jika ada file
     if (req.file) {
-      user.profilePicture = req.file.path; // URL Cloudinary https://res.cloudinary.com/...
+      const publicId = `user-${req.user._id}-${Date.now()}`;
+      const imageUrl = await uploadToCloudinary(
+        req.file.buffer,
+        'danadiri/profiles',
+        publicId
+      );
+      user.profilePicture = imageUrl;
     }
 
     if (req.body.password) {

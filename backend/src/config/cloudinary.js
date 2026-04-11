@@ -1,5 +1,4 @@
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -7,14 +6,29 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'danadiri/profiles',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
-    public_id: (req) => `user-${req.user._id}-${Date.now()}`,
-  },
-});
+/**
+ * Upload buffer ke Cloudinary secara async.
+ * @param {Buffer} buffer  - file buffer dari multer memoryStorage
+ * @param {string} folder  - folder di Cloudinary
+ * @param {string} publicId - public_id unik
+ * @returns {Promise<string>} URL gambar di Cloudinary
+ */
+const uploadToCloudinary = (buffer, folder, publicId) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        public_id: publicId,
+        overwrite: true,
+        transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+};
 
-module.exports = { cloudinary, storage };
+module.exports = { cloudinary, uploadToCloudinary };

@@ -12,10 +12,10 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 
 const multer = require('multer');
-const { storage } = require('../config/cloudinary');
 
+// Gunakan memoryStorage — tidak ada akses file system, aman di Railway
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5000000 },
   fileFilter(req, file, cb) {
     if (file.mimetype.startsWith('image/')) {
