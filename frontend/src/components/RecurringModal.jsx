@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import RecurringForm from './RecurringForm';
 import { formatRupiah } from '../utils/currency';
 
-const RecurringModal = ({ isOpen, onClose, onSubmit }) => {
+const RecurringModal = ({ initialData = {}, isOpen, onClose, onSubmit }) => {
   const modalRef = useRef(null);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const RecurringModal = ({ isOpen, onClose, onSubmit }) => {
         <div className="pb-6 border-b border-gray-100 mb-6">
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-bold text-[#1f2937]">
-              Tambah Transaksi Berulang
+              {initialData._id ? 'Edit Transaksi Berulang' : 'Tambah Transaksi Berulang'}
             </h3>
             <button
               onClick={onClose}
@@ -64,6 +64,7 @@ const RecurringModal = ({ isOpen, onClose, onSubmit }) => {
         </div>
 
         <RecurringForm 
+          initialData={initialData}
           onSubmit={onSubmit}
           onCancel={onClose}
         />

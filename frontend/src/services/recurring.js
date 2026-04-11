@@ -17,3 +17,9 @@ export const deleteRecurring = async (id) => {
   const response = await api.delete(`/recurring/${id}`);
   return response.data;
 };
+
+// Update transaksi berulang
+export const updateRecurring = async (id, data) => {
+  const response = await api.put(`/recurring/${id}`, data);
+  return response.data;
+};

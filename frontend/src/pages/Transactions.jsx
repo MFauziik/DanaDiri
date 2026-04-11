@@ -6,6 +6,7 @@ import api from '../services/api';
 import {
   getRecurring,
   createRecurring,
+  updateRecurring,
   deleteRecurring,
 } from '../services/recurring';
 import { formatRupiah } from '../utils/currency';
@@ -22,6 +23,7 @@ const Transactions = ({ user, setUser }) => {
 
   const [showForm, setShowForm] = useState(false);
   const [showRecurringForm, setShowRecurringForm] = useState(false);
+  const [editingRecurring, setEditingRecurring] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
 
   // FILTER UI
@@ -167,6 +169,18 @@ const Transactions = ({ user, setUser }) => {
         error.response?.data?.message ||
           'Gagal menambah transaksi berulang'
       );
+    }
+  };
+
+  const handleUpdateRecurring = async (formData) => {
+    try {
+      await updateRecurring(editingRecurring._id, formData);
+      await fetchAllData();
+      setEditingRecurring(null);
+      alert('Transaksi berulang berhasil diupdate!');
+    } catch (error) {
+      console.error('Gagal mengupdate transaksi berulang:', error);
+      alert(error.response?.data?.message || 'Gagal mengupdate transaksi berulang');
     }
   };
 
@@ -434,13 +448,22 @@ const handlePageClick = (page) => {
                         <CategoryIcon category={item.category || item.description} size={20} className="text-blue-500" />
                       </div>
 
-                      <button
-                        onClick={() => handleDeleteRecurring(item._id)}
-                        className="text-[#b0b7c3] hover:text-red-500 transition text-lg"
-                        title="Hapus"
-                      >
-                        ⋮
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setEditingRecurring(item)}
+                          className="text-[#2f6df6] hover:text-[#245ce0] transition text-sm font-semibold"
+                          title="Edit"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRecurring(item._id)}
+                          className="text-[#ff4d6d] hover:text-red-500 transition text-sm font-semibold"
+                          title="Hapus"
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </div>
 
                     <h3 className="text-[17px] font-semibold text-[#1f2a44] capitalize mb-3 line-clamp-1">
@@ -746,11 +769,18 @@ const handlePageClick = (page) => {
         }
       />
 
-      {/* RECURRING MODAL */}
       <RecurringModal
-        isOpen={showRecurringForm}
-        onClose={() => setShowRecurringForm(false)}
-        onSubmit={handleAddRecurring}
+        initialData={editingRecurring || {}}
+        isOpen={showRecurringForm || !!editingRecurring}
+        onClose={() => {
+          setShowRecurringForm(false);
+          setEditingRecurring(null);
+        }}
+        onSubmit={
+          editingRecurring
+            ? handleUpdateRecurring
+            : handleAddRecurring
+        }
       />
     </div>
   );

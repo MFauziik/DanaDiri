@@ -27,6 +27,34 @@ const createRecurring = asyncHandler(async (req, res) => {
   res.status(201).json(recurring);
 });
 
+// UPDATE
+const updateRecurring = asyncHandler(async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ message: 'Database sedang tidak tersedia' });
+  }
+
+  const recurring = await Recurring.findById(req.params.id);
+
+  if (!recurring) {
+    res.status(404);
+    throw new Error('Recurring transaction not found');
+  }
+
+  // Make sure the logged in user matches the recurring transaction user
+  if (recurring.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('User not authorized');
+  }
+
+  const updatedRecurring = await Recurring.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
+
+  res.json(updatedRecurring);
+});
+
 // DELETE
 const deleteRecurring = asyncHandler(async (req, res) => {
   if (mongoose.connection.readyState !== 1) {
@@ -40,5 +68,6 @@ const deleteRecurring = asyncHandler(async (req, res) => {
 module.exports = {
   getRecurring,
   createRecurring,
+  updateRecurring,
   deleteRecurring,
 };
