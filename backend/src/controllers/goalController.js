@@ -1,5 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Goal = require('../models/Goal');
+const Transaction = require('../models/Transaction');
+const { calculateBalance } = require('../utils/balanceUtils');
 
 // @desc    Mendapatkan semua goals user
 // @route   GET /api/goals
@@ -13,11 +15,13 @@ const getGoals = asyncHandler(async (req, res) => {
 // @route   POST /api/goals
 // @access  Private
 const createGoal = asyncHandler(async (req, res) => {
-  const { name, targetAmount, deadline, category, notes } = req.body;
+  const { name, targetAmount, deadline, category, notes, currentAmount } = req.body;
 
   if (!name || !targetAmount || !deadline) {
-    res.status(400);
-    throw new Error('Field wajib: name, targetAmount, deadline');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Field wajib: name, targetAmount, deadline' 
+    });
   }
 
   const goal = await Goal.create({
@@ -27,7 +31,7 @@ const createGoal = asyncHandler(async (req, res) => {
     deadline,
     category: category || 'Lainnya',
     notes: notes || '',
-    currentAmount: 0,
+    currentAmount: currentAmount || 0,
     status: 'active',
   });
 
@@ -95,8 +99,19 @@ const addFunds = asyncHandler(async (req, res) => {
   const numericAmount = Number(amount);
 
   if (!numericAmount || numericAmount <= 0) {
-    res.status(400);
-    throw new Error('Jumlah harus lebih dari 0');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Jumlah harus lebih dari 0' 
+    });
+  }
+
+  // Cek apakah saldo mencukupi sebelum menambah dana ke goal
+  const currentBalance = await calculateBalance(req.user._id);
+  if (currentBalance < numericAmount) {
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Saldo tidak cukup untuk menambah dana ke goal ini' 
+    });
   }
 
   goal.currentAmount += numericAmount;
@@ -109,6 +124,17 @@ const addFunds = asyncHandler(async (req, res) => {
   }
 
   await goal.save();
+
+  // Buat transaksi otomatis
+  await Transaction.create({
+    user: req.user._id,
+    amount: numericAmount,
+    type: 'expense',
+    category: 'Tabungan',
+    description: `Tabungan: ${goal.name}`,
+    date: new Date(),
+  });
+
   res.json(goal);
 });
 

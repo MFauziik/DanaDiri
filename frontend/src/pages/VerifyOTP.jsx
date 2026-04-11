@@ -33,7 +33,13 @@ const VerifyOTP = () => {
     setError('');
     setMessage('');
     try {
-      await verifyOTP(email, otp);
+      const data = await verifyOTP(email, otp);
+      
+      if (data.success === false) {
+        setError(data.message);
+        return;
+      }
+
       // Jika valid, lanjut ke reset password
       navigate('/reset-password', { state: { email, otp } });
     } catch (err) {
@@ -48,7 +54,11 @@ const VerifyOTP = () => {
     setError('');
     setMessage('');
     try {
-      await forgotPassword(email);
+      const data = await forgotPassword(email);
+      if (data.success === false) {
+        setError(data.message);
+        return;
+      }
       setMessage('Kode OTP baru telah dikirim ke email Anda.');
     } catch (err) {
       setError('Gagal mengirim ulang OTP. Silakan coba lagi.');
@@ -81,7 +91,7 @@ const VerifyOTP = () => {
             Ubah Email
           </Link>
           
-          <h2 className="text-[22px] font-bold text-slate-800 mb-2 font-heading">Verifikasi OTP</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2 font-heading">Verifikasi OTP</h2>
           <p className="text-sm text-slate-500 mb-8">
             Kami telah mengirimkan 6 digit kode OTP ke <span className="font-semibold text-slate-700">{email}</span>.
           </p>

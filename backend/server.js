@@ -2,10 +2,14 @@ const express = require('express');
 const dotenv = require('dotenv').config();
 const cors = require('cors');
 const connectDB = require('./src/config/database');
+const { startRecurringJob } = require('./src/utils/recurringJob');
 
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Jalankan scheduler untuk transaksi berulang
+    startRecurringJob();
 
     const app = express();
 

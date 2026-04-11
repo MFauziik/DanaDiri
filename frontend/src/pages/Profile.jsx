@@ -68,6 +68,12 @@ const Profile = ({ user, setUser }) => {
 
     try {
       const updatedUser = await updateProfile(formData);
+      
+      if (updatedUser.success === false) {
+        setMessage({ type: 'error', text: updatedUser.message });
+        return;
+      }
+
       setUser(updatedUser);
       setMessage({ type: 'success', text: 'Profil berhasil diperbarui!' });
       setPassword(''); // clear password if set
@@ -79,6 +85,23 @@ const Profile = ({ user, setUser }) => {
     }
   };
 
+  const handleCancel = () => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setPhone(user.phone || '');
+      setPreview(user.profilePicture ? `${API_BASE_URL}${user.profilePicture}` : '');
+    } else {
+      setName('');
+      setEmail('');
+      setPhone('');
+      setPreview('');
+    }
+    setPassword('');
+    setProfilePic(null);
+    setMessage({ type: '', text: '' });
+  };
+
   return (
     <div className="min-h-screen bg-[#F4F7FC] flex flex-col md:flex-row">
       <Sidebar user={user} setUser={setUser} />
@@ -87,7 +110,7 @@ const Profile = ({ user, setUser }) => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-[28px] font-bold text-slate-900 mb-1 font-heading">Pengaturan Profil</h1>
+            <h1 className="text-3xl font-bold text-slate-900 mb-1 font-heading">Pengaturan Profil</h1>
             <p className="text-sm text-slate-500">
               Kelola informasi pribadi, keamanan, dan preferensi akun DanaDiri Anda.
             </p>
@@ -221,6 +244,7 @@ const Profile = ({ user, setUser }) => {
             <div className="flex justify-end gap-3">
               <button
                 type="button"
+                onClick={handleCancel}
                 className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-50 transition-colors"
               >
                 Batalkan

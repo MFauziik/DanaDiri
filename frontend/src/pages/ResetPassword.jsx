@@ -40,7 +40,13 @@ const ResetPassword = () => {
     setLoading(true);
     setError('');
     try {
-      await resetPassword(email, otp, password);
+      const data = await resetPassword(email, otp, password);
+      
+      if (data.success === false) {
+        setError(data.message);
+        return;
+      }
+
       setSuccess(true);
       // Tunggu 3 detik lalu ke login
       setTimeout(() => {
@@ -60,7 +66,7 @@ const ResetPassword = () => {
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={32} />
           </div>
-          <h2 className="text-[22px] font-bold text-slate-800 mb-2 font-heading">Berhasil!</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2 font-heading">Berhasil!</h2>
           <p className="text-sm text-slate-500 mb-8">
             Kata sandi Anda telah berhasil diperbarui. Anda akan diarahkan ke halaman login dalam beberapa detik.
           </p>
@@ -94,7 +100,7 @@ const ResetPassword = () => {
 
         {/* Card */}
         <div className="bg-white w-full rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 mb-6">
-          <h2 className="text-[22px] font-bold text-slate-800 mb-2 font-heading">Reset Kata Sandi</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2 font-heading">Reset Kata Sandi</h2>
           <p className="text-sm text-slate-500 mb-8">Buat kata sandi baru yang kuat untuk akun Anda.</p>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">{error}</div>}

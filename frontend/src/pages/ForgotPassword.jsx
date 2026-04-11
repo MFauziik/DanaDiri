@@ -48,7 +48,7 @@ const ForgotPassword = () => {
             Kembali ke Login
           </Link>
           
-          <h2 className="text-[22px] font-bold text-slate-800 mb-2 font-heading">Lupa Kata Sandi?</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2 font-heading">Lupa Kata Sandi?</h2>
           <p className="text-sm text-slate-500 mb-8">Masukkan email Anda dan kami akan mengirimkan kode OTP untuk meriset kata sandi Anda.</p>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">{error}</div>}

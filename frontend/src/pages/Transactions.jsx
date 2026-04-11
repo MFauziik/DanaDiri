@@ -9,6 +9,7 @@ import {
   deleteRecurring,
 } from '../services/recurring';
 import { formatRupiah } from '../utils/currency';
+import CategoryIcon from '../components/CategoryIcon';
 
 const Transactions = ({ user, setUser }) => {
   const [transactions, setTransactions] = useState([]);
@@ -109,7 +110,13 @@ const Transactions = ({ user, setUser }) => {
 
   const handleAddTransaction = async (formData) => {
     try {
-      await api.post('/transactions', formData);
+      const { data } = await api.post('/transactions', formData);
+      
+      if (data.success === false) {
+        alert(data.message);
+        return;
+      }
+
       await fetchAllData();
       setShowForm(false);
     } catch (error) {
@@ -120,7 +127,13 @@ const Transactions = ({ user, setUser }) => {
 
   const handleUpdateTransaction = async (formData) => {
     try {
-      await api.put(`/transactions/${editingTransaction._id}`, formData);
+      const { data } = await api.put(`/transactions/${editingTransaction._id}`, formData);
+      
+      if (data.success === false) {
+        alert(data.message);
+        return;
+      }
+
       await fetchAllData();
       setEditingTransaction(null);
     } catch (error) {
@@ -217,136 +230,6 @@ const paginatedTransactions = useMemo(() => {
 }, [filteredTransactions, currentPage]);
 
     
-  const getRecurringIcon = (category = '') => {
-  const lower = category.toLowerCase();
-  
-
-  // GAJI / UANG
-  if (lower.includes('gaji')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-3 0-5 1.5-5 4s2 4 5 4 5-1.5 5-4-2-4-5-4z" />
-      </svg>
-    );
-  }
-
-  // INTERNET
-  if (lower.includes('internet') || lower.includes('wifi')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 16.5a5 5 0 017 0M5 12a10 10 0 0114 0M2 8a15 15 0 0120 0" />
-      </svg>
-    );
-  }
-
-  // ASURANSI
-  if (lower.includes('asuransi')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l7 4v5c0 5-3.5 9-7 9s-7-4-7-9V7l7-4z" />
-      </svg>
-    );
-  }
-
-  // LISTRIK
-  if (lower.includes('listrik')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 2L3 14h7v8l10-12h-7z" />
-      </svg>
-    );
-  }
-
-  // AIR
-  if (lower.includes('air')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3C8 8 6 10 6 13a6 6 0 0012 0c0-3-2-5-6-10z" />
-      </svg>
-    );
-  }
-
-  // MAKANAN
-  if (lower.includes('makan')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 3v7a4 4 0 004 4v7M8 3v7M12 3v18" />
-      </svg>
-    );
-  }
-
-  // TRANSPORT
-  if (lower.includes('transport')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13l2-5h14l2 5M5 13v6M19 13v6M5 19h14" />
-      </svg>
-    );
-  }
-
-  // DEFAULT (KARTU)
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <rect x="2" y="6" width="20" height="12" rx="2" />
-    </svg>
-  );
-};
-
-  const getCategoryIcon = (category = '') => { 
-  const lower = category.toLowerCase();
-
-  // MAKANAN
-  if (lower.includes('makan')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 3v7a4 4 0 004 4v7M8 3v7M12 3v18" />
-      </svg>
-    );
-  }
-
-  // BONUS / RUMAH
-  if (lower.includes('bonus')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10l9-6 9 6M4 10h16v10H4z" />
-      </svg>
-    );
-  }
-
-  // SERVICE / MOBIL
-  if (lower.includes('service')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13l2-5h14l2 5M5 13v6M19 13v6M5 19h14" />
-      </svg>
-    );
-  }
-
-  // ASURANSI
-  if (lower.includes('asuransi')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l7 4v5c0 5-3.5 9-7 9s-7-4-7-9V7l7-4z" />
-      </svg>
-    );
-  }
-
-  // GAJI
-  if (lower.includes('gaji')) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <circle cx="12" cy="12" r="4" />
-      </svg>
-    );
-  }
-
-  // DEFAULT
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  );
-};
 
   if (loading) {
     return (
@@ -408,7 +291,7 @@ const handlePageClick = (page) => {
           {/* HEADER */}
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 mb-8">
             <div>
-              <h1 className="text-[28px] md:text-[32px] font-bold text-[#1f2a44] leading-tight">
+              <h1 className="text-3xl md:text-4xl font-bold text-[#1f2a44] leading-tight">
                 Riwayat Transaksi
               </h1>
               <p className="text-[#8b95a7] text-sm mt-1">
@@ -449,7 +332,7 @@ const handlePageClick = (page) => {
                     <p className="text-xs text-[#8b95a7] font-medium">
                       Total Pemasukan
                     </p>
-                    <h3 className="text-[24px] font-bold text-[#12b76a] mt-1">
+                    <h3 className="text-2xl font-bold text-[#12b76a] mt-1">
                       {formatRupiah(totalIncome)}
                     </h3>
                   </div>
@@ -470,7 +353,7 @@ const handlePageClick = (page) => {
                     <p className="text-xs text-[#8b95a7] font-medium">
                       Total Pengeluaran
                     </p>
-                    <h3 className="text-[24px] font-bold text-[#ff4d6d] mt-1">
+                    <h3 className="text-2xl font-bold text-[#ff4d6d] mt-1">
                       {formatRupiah(totalExpense)}
                     </h3>
                   </div>
@@ -493,7 +376,7 @@ const handlePageClick = (page) => {
                     <p className="text-xs text-[#8b95a7] font-medium">
                       Sisa Anggaran
                     </p>
-                    <h3 className="text-[24px] font-bold text-[#2f6df6] mt-1">
+                    <h3 className="text-2xl font-bold text-[#2f6df6] mt-1">
                       {formatRupiah(remainingBudget)}
                     </h3>
                   </div>
@@ -511,7 +394,7 @@ const handlePageClick = (page) => {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2f6df6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
 </svg>
-              <h2 className="text-[18px] font-bold text-[#1f2a44]">
+              <h2 className="text-lg font-bold text-[#1f2a44]">
                 Transaksi Berulang
               </h2>
             </div>
@@ -529,7 +412,7 @@ const handlePageClick = (page) => {
                   >
                     <div className="flex items-start justify-between mb-5">
                       <div className="w-11 h-11 rounded-xl bg-[#f4f7ff] flex items-center justify-center text-xl">
-                        {getRecurringIcon(item.category || item.description)}
+                        <CategoryIcon category={item.category || item.description} size={20} className="text-blue-500" />
                       </div>
 
                       <button
@@ -547,7 +430,7 @@ const handlePageClick = (page) => {
 
                     <div className="flex flex-wrap gap-2 mb-5">
                       <span
-                        className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${
+                        className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                           item.type === 'income'
                             ? 'bg-[#eaf8f0] text-[#12b76a]'
                             : 'bg-[#fff0f3] text-[#ff4d6d]'
@@ -556,16 +439,16 @@ const handlePageClick = (page) => {
                         {item.type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN'}
                       </span>
 
-                      <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold bg-[#f2f4f7] text-[#667085] capitalize">
+                      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-[#f2f4f7] text-[#667085] capitalize">
                         {item.category || 'Umum'}
                       </span>
 
-                      <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold bg-[#eef4ff] text-[#2f6df6]">
+                      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-[#eef4ff] text-[#2f6df6]">
                         Tgl {item.dayOfMonth || item.day || 1}
                       </span>
                     </div>
 
-                    <p className="text-[28px] font-bold text-[#1f2a44] tracking-tight">
+                    <p className="text-3xl font-bold text-[#1f2a44] tracking-tight">
                       {formatRupiah(item.amount || 0)}
                     </p>
                   </div>
@@ -659,19 +542,19 @@ const handlePageClick = (page) => {
                 <table className="min-w-full">
                   <thead>
                     <tr className="bg-white">
-                      <th className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#98a2b3]">
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#98a2b3]">
                         Tanggal
                       </th>
-                      <th className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#98a2b3]">
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#98a2b3]">
                         Kategori
                       </th>
-                      <th className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#98a2b3]">
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#98a2b3]">
                         Jenis
                       </th>
-                      <th className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#98a2b3]">
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#98a2b3]">
                         Jumlah
                       </th>
-                      <th className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#98a2b3]">
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#98a2b3]">
                         Aksi
                       </th>
                     </tr>
@@ -698,7 +581,7 @@ const handlePageClick = (page) => {
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-full bg-[#f4f7ff] flex items-center justify-center text-base">
-                                {getCategoryIcon(transaction.category)}
+                                <CategoryIcon category={transaction.category} size={18} className="text-blue-500" />
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-[#1f2a44]">
@@ -713,7 +596,7 @@ const handlePageClick = (page) => {
 
                           <td className="px-6 py-5 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold ${
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                                 transaction.type === 'income'
                                   ? 'bg-[#eaf8f0] text-[#12b76a]'
                                   : 'bg-[#fff0f3] text-[#ff4d6d]'

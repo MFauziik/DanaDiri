@@ -70,7 +70,7 @@ const Sidebar = ({ user, setUser }) => {
         className={`
         fixed top-0 left-0 z-50 h-[100dvh] w-[260px] bg-white transform transition-transform duration-300 ease-in-out border-r border-slate-100/80
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:static md:flex-shrink-0 flex flex-col font-sans
+        md:translate-x-0 md:sticky md:top-0 md:flex-shrink-0 flex flex-col font-sans
         `}
       >
         {/* Close button mobile */}
@@ -85,7 +85,7 @@ const Sidebar = ({ user, setUser }) => {
           <img src="/logo.png" alt="DanaDiri Logo" className="w-10 h-10 object-contain rounded-lg" />
           <div className="flex flex-col">
             <h1 className="text-xl font-bold font-heading text-slate-800 leading-none mb-1">DanaDiri</h1>
-            <p className="text-[11px] text-slate-500 font-medium">Manajemen Keuangan</p>
+            <p className="text-xs text-slate-500 font-medium">Manajemen Keuangan</p>
           </div>
         </div>
 
@@ -103,17 +103,16 @@ const Sidebar = ({ user, setUser }) => {
                     navigate(item.path);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3.5 px-4 py-[11px] rounded-[10px] text-[14px] font-semibold transition-all duration-200 group
-                  ${
-                    isActive
+                  className={`w-full flex items-center gap-3.5 px-4 py-[11px] rounded-[10px] text-sm font-semibold transition-all duration-200 group
+                  ${isActive
                       ? "bg-[#EEF2FF] text-blue-600"
                       : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-700"
-                  }`}
+                    }`}
                 >
-                  <Icon 
-                    size={20} 
+                  <Icon
+                    size={20}
                     strokeWidth={isActive ? 2.5 : 2}
-                    className={`transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-500'}`} 
+                    className={`transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-500'}`}
                   />
                   <span>{item.name}</span>
                 </button>
@@ -130,23 +129,23 @@ const Sidebar = ({ user, setUser }) => {
           <div className="px-4">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3.5 px-4 py-[11px] rounded-[10px] text-[14px] font-semibold text-[#f43f5e] hover:bg-rose-50 transition-colors group"
+              className="w-full flex items-center gap-3.5 px-4 py-[11px] rounded-[10px] text-sm font-semibold text-[#f43f5e] hover:bg-rose-50 transition-colors group"
             >
               <LogOut size={20} strokeWidth={2} className="text-[#f43f5e]/80 group-hover:text-[#f43f5e]" />
               <span>Keluar</span>
             </button>
           </div>
-          
+
           {/* Push down the bottom card */}
           <div className="flex-1"></div>
 
           {/* Saran Keuangan Card */}
           <div className="p-5 w-full mt-8">
             <div className="bg-[#F8FAFC] border border-slate-100 rounded-[14px] p-4 shadow-sm">
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.08em] mb-2 font-heading">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-[0.08em] mb-2 font-heading">
                 Saran Keuangan
               </h4>
-              <p className="text-[12px] text-slate-500 leading-relaxed font-medium">
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
                 {randomAdvice}
               </p>
             </div>

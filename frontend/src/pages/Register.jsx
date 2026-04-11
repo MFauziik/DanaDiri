@@ -16,6 +16,12 @@ const Register = ({ setUser }) => {
     e.preventDefault();
     try {
       const userData = await register(name, email, phone, password);
+      
+      if (userData.success === false) {
+        setError(userData.message);
+        return;
+      }
+
       setUser(userData);
       navigate('/dashboard');
     } catch (err) {
@@ -43,7 +49,7 @@ const Register = ({ setUser }) => {
 
         {/* Card */}
         <div className="bg-white w-full rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 mb-12">
-          <h2 className="text-[22px] font-bold text-slate-800 mb-2 font-heading">Mulai Perjalanan Anda</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2 font-heading">Mulai Perjalanan Anda</h2>
           <p className="text-sm text-slate-500 mb-6">Lengkapi data di bawah untuk membuat akun baru</p>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">{error}</div>}

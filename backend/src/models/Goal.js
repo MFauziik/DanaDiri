@@ -27,16 +27,6 @@ const goalSchema = mongoose.Schema(
     },
     category: {
       type: String,
-      enum: [
-        'Liburan',
-        'Kendaraan',
-        'Rumah',
-        'Pendidikan',
-        'Dana Darurat',
-        'Pensiun',
-        'Investasi',
-        'Lainnya',
-      ],
       default: 'Lainnya',
     },
     status: {

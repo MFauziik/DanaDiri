@@ -22,6 +22,14 @@ const errorHandler = (err, req, res, next) => {
     message = 'Email sudah terdaftar';
   }
 
+  // Jika error validasi Mongoose
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = Object.values(err.errors)
+      .map((item) => item.message)
+      .join(', ');
+  }
+
   res.status(statusCode).json({
     message,
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,

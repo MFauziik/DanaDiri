@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 import RecurringForm from './RecurringForm';
 import { formatRupiah } from '../utils/currency';
 
@@ -47,19 +48,17 @@ const RecurringModal = ({ isOpen, onClose, onSubmit }) => {
         ref={modalRef}
         className="relative mx-auto p-6 border w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl rounded-2xl bg-white"
       >
-        <div className="sticky top-0 bg-white z-10 pb-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-2xl font-bold text-gray-900">
+        <div className="pb-6 border-b border-gray-100 mb-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-[#1f2937]">
               Tambah Transaksi Berulang
             </h3>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
               aria-label="Close modal"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X size={24} />
             </button>
           </div>
         </div>

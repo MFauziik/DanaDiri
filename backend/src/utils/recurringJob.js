@@ -1,3 +1,4 @@
+const cron = require('node-cron');
 const mongoose = require('mongoose');
 const Recurring = require('../models/RecurringTransaction');
 const Transaction = require('../models/Transaction');
@@ -14,18 +15,18 @@ const processRecurringTransactions = async (retryCount = 0) => {
   try {
     // Cek koneksi database
     if (!isDbConnected()) {
-      console.log('⚠️ Database not connected, waiting for connection...');
+      console.log('⚠️ [Recurring Job] Database not connected, waiting for connection...');
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       if (retryCount < maxRetries) {
         return processRecurringTransactions(retryCount + 1);
       } else {
-        console.error('❌ Max retries reached, skipping recurring job');
+        console.error('❌ [Recurring Job] Max retries reached, skipping recurring job');
         return;
       }
     }
     
-    console.log('🔄 Checking recurring transactions...');
+    console.log('🔄 [Recurring Job] Checking recurring transactions...');
     
     const today = new Date();
     const currentDay = today.getDate();
@@ -47,11 +48,11 @@ const processRecurringTransactions = async (retryCount = 0) => {
     });
     
     if (recurrings.length === 0) {
-      console.log('📭 No recurring transactions to process today');
+      console.log('📭 [Recurring Job] No recurring transactions to process today');
       return;
     }
     
-    console.log(`📋 Found ${recurrings.length} recurring transactions to process`);
+    console.log(`📋 [Recurring Job] Found ${recurrings.length} recurring transactions to process`);
     
     // Loop setiap recurring dan buat transaksi
     let successCount = 0;
@@ -59,12 +60,6 @@ const processRecurringTransactions = async (retryCount = 0) => {
     
     for (const recurring of recurrings) {
       try {
-        // Cek koneksi lagi sebelum setiap operasi
-        if (!isDbConnected()) {
-          console.log('⚠️ Database disconnected, waiting...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        
         // Buat transaksi baru
         const transaction = new Transaction({
           user: recurring.user,
@@ -84,22 +79,22 @@ const processRecurringTransactions = async (retryCount = 0) => {
         await recurring.save();
         
         successCount++;
-        console.log(`✅ Created transaction for recurring: ${recurring._id} - Rp ${recurring.amount}`);
+        console.log(`✅ [Recurring Job] Created transaction for recurring: ${recurring._id} - Rp ${recurring.amount}`);
         
       } catch (error) {
         failCount++;
-        console.error(`❌ Failed to process recurring ${recurring._id}:`, error.message);
+        console.error(`❌ [Recurring Job] Failed to process recurring ${recurring._id}:`, error.message);
       }
     }
     
-    console.log(`✅ Recurring transactions processing completed: ${successCount} success, ${failCount} failed`);
+    console.log(`✅ [Recurring Job] Processing completed: ${successCount} success, ${failCount} failed`);
     
   } catch (error) {
-    console.error('❌ Error processing recurring transactions:', error.message);
+    console.error('❌ [Recurring Job] Error processing recurring transactions:', error.message);
     
     // Retry jika masih ada kesempatan
     if (retryCount < maxRetries) {
-      console.log(`🔄 Retrying in 5 seconds... (attempt ${retryCount + 1}/${maxRetries})`);
+      console.log(`🔄 [Recurring Job] Retrying in 5 seconds... (attempt ${retryCount + 1}/${maxRetries})`);
       await new Promise(resolve => setTimeout(resolve, 5000));
       return processRecurringTransactions(retryCount + 1);
     }
@@ -108,43 +103,23 @@ const processRecurringTransactions = async (retryCount = 0) => {
 
 // Start scheduler
 const startRecurringJob = () => {
-  // Jalankan setiap 6 jam (bisa disesuaikan)
-  const interval = setInterval(async () => {
-    console.log('⏰ Running recurring transactions job...');
+  // Jalankan setiap jam untuk mengecek apakah ada yang perlu diproses hari ini
+  // Menit ke-1 setiap jam
+  cron.schedule('1 * * * *', async () => {
+    console.log('⏰ [Recurring Job] Running hourly check...');
     await processRecurringTransactions();
-  }, 1000 * 60 * 60 * 6); // 6 jam
-  
-  // Juga jalankan setiap hari jam 00:01 untuk memastikan
-  const scheduleNextRun = () => {
-    const now = new Date();
-    const nextRun = new Date();
-    nextRun.setHours(0, 1, 0, 0); // 00:01:00
-    
-    if (nextRun <= now) {
-      nextRun.setDate(nextRun.getDate() + 1);
-    }
-    
-    const timeUntilNext = nextRun - now;
-    
-    setTimeout(async () => {
-      console.log('⏰ Running daily recurring job...');
-      await processRecurringTransactions();
-      scheduleNextRun(); // Schedule next daily run
-    }, timeUntilNext);
-  };
-  
-  scheduleNextRun();
-  
-  console.log('🚀 Recurring job scheduler started');
-  console.log('   - Daily job at 00:01');
-  console.log('   - Interval job every 6 hours');
-  
-  // Cleanup interval on process exit
-  process.on('SIGINT', () => {
-    clearInterval(interval);
-    console.log('📴 Recurring job stopped');
-    process.exit();
   });
+
+  // Jalankan juga saat startup (opsional, tapi berguna untuk dev)
+  setTimeout(async () => {
+    console.log('⏰ [Recurring Job] Running initial startup check...');
+    await processRecurringTransactions();
+  }, 5000);
+  
+  console.log('🚀 [Recurring Job] Scheduler started (Hourly check + Daily at 00:01 logic)');
 };
+
+module.exports = { startRecurringJob, processRecurringTransactions };
+
 
 module.exports = { startRecurringJob, processRecurringTransactions };

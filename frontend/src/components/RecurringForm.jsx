@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CATEGORIES, TRANSACTION_TYPES, DAYS } from '../utils/constants';
 import { formatNumber, parseRupiah } from '../utils/currency';
+import { ChevronDown } from 'lucide-react';
 
 const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -31,13 +32,11 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
       alert('Masukkan jumlah yang valid');
       return;
     }
-
     onSubmit({
       ...formData,
       amount: amount,
@@ -45,49 +44,74 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
     });
   };
 
+  const labelClass = "block text-xs font-extrabold text-[#9ca3af] tracking-widest uppercase mb-2.5 px-1";
+  const inputClass = "w-full h-12 px-4 bg-[#f8faff] border border-[#f0f3f9] rounded-xl text-[#1f2937] font-medium outline-none focus:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-50/50 transition-all placeholder:text-gray-300 appearance-none";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label className={labelClass}>Jumlah (RP)</label>
+        <input
+          type="text"
+          name="amount"
+          value={displayAmount}
+          onChange={handleAmountChange}
+          className={inputClass}
+          placeholder="Masukkan jumlah"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Jumlah (Rp)
-          </label>
-          <input
-            type="text"
-            name="amount"
-            value={displayAmount}
-            onChange={handleAmountChange}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Masukkan jumlah"
-            required
-          />
+          <label className={labelClass}>Tipe</label>
+          <div className="relative">
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className={inputClass}
+            >
+              {TRANSACTION_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
         </div>
         <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Tipe
-          </label>
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            {TRANSACTION_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
+          <label className={labelClass}>Tanggal (Per Bulan)</label>
+          <div className="relative">
+            <select
+              name="dayOfMonth"
+              value={formData.dayOfMonth}
+              onChange={handleChange}
+              className={inputClass}
+            >
+              {DAYS.map((day) => (
+                <option key={day.value} value={day.value}>
+                  Tanggal {day.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5 ml-1">
+            Setiap tanggal berapa transaksi ini dibuat?
+          </p>
         </div>
-        <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Kategori
-          </label>
+      </div>
+
+      <div>
+        <label className={labelClass}>Kategori</label>
+        <div className="relative">
           <select
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className={inputClass}
           >
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -95,52 +119,32 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Tanggal (per bulan)
-          </label>
-          <select
-            name="dayOfMonth"
-            value={formData.dayOfMonth}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            {DAYS.map((day) => (
-              <option key={day.value} value={day.value}>
-                Tanggal {day.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            Setiap tanggal berapa transaksi ini dibuat?
-          </p>
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Deskripsi (opsional)
-          </label>
-          <input
-            type="text"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Contoh: Gaji, Tagihan Listrik, dll"
-          />
+          <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
       </div>
-      <div className="flex justify-end space-x-2">
+
+      <div>
+        <label className={labelClass}>Deskripsi (Opsional)</label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          placeholder="Contoh: Gaji, Tagihan Listrik, dll"
+          className={`${inputClass} h-28 py-4 resize-none`}
+        ></textarea>
+      </div>
+
+      <div className="flex items-center justify-end gap-10 pt-4 border-t border-gray-100">
         <button
           type="button"
           onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          className="text-sm font-bold text-gray-500 hover:text-gray-700 transition-all uppercase tracking-wider"
         >
           Batal
         </button>
         <button
           type="submit"
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+          className="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-10 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 transition active:scale-[0.98]"
         >
           Simpan
         </button>

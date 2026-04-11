@@ -10,14 +10,18 @@ const registerUser = asyncHandler(async (req, res) => {
   const { name, email, phone, password } = req.body;
 
   if (!name || !email || !phone || !password) {
-    res.status(400);
-    throw new Error('Semua field harus diisi');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Semua field harus diisi' 
+    });
   }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
-    res.status(400);
-    throw new Error('Email sudah terdaftar');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Email sudah terdaftar' 
+    });
   }
 
   const user = await User.create({
@@ -48,8 +52,10 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    res.status(400);
-    throw new Error('Email dan password harus diisi');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Email dan password harus diisi' 
+    });
   }
 
   const user = await User.findOne({ email });
@@ -61,10 +67,13 @@ const loginUser = asyncHandler(async (req, res) => {
       email: user.email,
       phone: user.phone,
       token: generateToken(user._id),
+      success: true
     });
   } else {
-    res.status(401);
-    throw new Error('Email atau password salah');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Email atau password salah' 
+    });
   }
 });
 
@@ -181,11 +190,13 @@ const verifyOTP = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    res.status(400);
-    throw new Error('OTP tidak valid atau sudah kadaluwarsa');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'OTP tidak valid atau sudah kadaluwarsa' 
+    });
   }
 
-  res.status(200).json({ message: 'OTP valid' });
+  res.status(200).json({ message: 'OTP valid', success: true });
 });
 
 // @desc    Reset password
@@ -201,8 +212,10 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    res.status(400);
-    throw new Error('OTP tidak valid atau sudah kadaluwarsa');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'OTP tidak valid atau sudah kadaluwarsa' 
+    });
   }
 
   // Set password baru

@@ -10,7 +10,9 @@ import {
 import { logout } from '../services/auth';
 import AddFundsModal from '../components/AddFundsModal';
 import Sidebar from '../components/Sidebar';
-import { formatRupiah } from '../utils/currency';
+import { formatRupiah, formatNumber, parseRupiah } from '../utils/currency';
+import CategoryIcon from '../components/CategoryIcon';
+import { Target, Plus, Pencil } from 'lucide-react';
 
 const Goals = ({ user, setUser }) => {
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ const Goals = ({ user, setUser }) => {
     targetAmount: '',
     currentAmount: '',
     deadline: '',
-    category: 'Umum',
+    category: 'Lainnya',
     notes: '',
   });
 
@@ -71,14 +73,21 @@ const Goals = ({ user, setUser }) => {
     navigate('/');
   };
 
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    const cleanNumber = parseRupiah(value);
+    setFormData({
+      ...formData,
+      targetAmount: formatNumber(cleanNumber),
+    });
+  };
+
   const openCreateModal = () => {
     setEditingGoal(null);
     setFormData({
       name: '',
       targetAmount: '',
-      currentAmount: '',
       deadline: '',
-      category: 'Umum',
       notes: '',
     });
     setShowTargetModal(true);
@@ -88,12 +97,10 @@ const Goals = ({ user, setUser }) => {
     setEditingGoal(goal);
     setFormData({
       name: goal.name || '',
-      targetAmount: goal.targetAmount || '',
-      currentAmount: goal.currentAmount || '',
+      targetAmount: formatNumber(goal.targetAmount || 0),
       deadline: goal.deadline
         ? new Date(goal.deadline).toISOString().split('T')[0]
         : '',
-      category: goal.category || 'Umum',
       notes: goal.notes || '',
     });
     setShowTargetModal(true);
@@ -115,10 +122,8 @@ const Goals = ({ user, setUser }) => {
 
       const payload = {
         name: formData.name,
-        targetAmount: Number(formData.targetAmount),
-        currentAmount: Number(formData.currentAmount || 0),
+        targetAmount: parseRupiah(formData.targetAmount),
         deadline: formData.deadline,
-        category: formData.category || 'Umum',
         notes: formData.notes || '',
       };
 
@@ -141,10 +146,8 @@ const Goals = ({ user, setUser }) => {
 
       const payload = {
         name: formData.name,
-        targetAmount: Number(formData.targetAmount),
-        currentAmount: Number(formData.currentAmount || 0),
+        targetAmount: parseRupiah(formData.targetAmount),
         deadline: formData.deadline,
-        category: formData.category || 'Umum',
         notes: formData.notes || '',
       };
 
@@ -161,7 +164,13 @@ const Goals = ({ user, setUser }) => {
 
   const handleAddFunds = async (amount) => {
     try {
-      await addFunds(selectedGoal._id, amount);
+      const data = await addFunds(selectedGoal._id, amount);
+      
+      if (data.success === false) {
+        alert(data.message);
+        return;
+      }
+
       await fetchGoals();
       setShowAddFunds(false);
       setSelectedGoal(null);
@@ -188,22 +197,21 @@ const Goals = ({ user, setUser }) => {
     return goal.status === filter;
   });
 
-  const getMonthYear = (date) => {
+  const getDayMonth = (date) => {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('id-ID', {
-      month: 'short',
-      year: 'numeric',
+      day: 'numeric',
+      month: 'long',
     });
   };
 
-  const getMonthsLeft = (deadline) => {
+  const getDaysLeft = (deadline) => {
     if (!deadline) return '-';
     const now = new Date();
     const target = new Date(deadline);
-    const months =
-      (target.getFullYear() - now.getFullYear()) * 12 +
-      (target.getMonth() - now.getMonth());
-    return months <= 0 ? '0 Bulan' : `${months} Bulan`;
+    const diffTime = target - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 0 ? '0 Hari' : `${diffDays} Hari`;
   };
 
   const getRecommendedMonthly = (goal) => {
@@ -238,7 +246,7 @@ const Goals = ({ user, setUser }) => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-[28px] md:text-[34px] font-extrabold text-[#18233f] leading-tight">
+            <h1 className="text-3xl md:text-[34px] font-extrabold text-[#18233f] leading-tight">
               Target Tabungan
             </h1>
             <p className="text-sm text-[#7b879f] mt-1">
@@ -250,7 +258,7 @@ const Goals = ({ user, setUser }) => {
             onClick={openCreateModal}
             className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-5 py-3 rounded-xl font-semibold shadow-md transition-all flex items-center gap-2 w-fit"
           >
-            <span className="text-lg">⊕</span>
+            <Plus size={20} />
             Tambah Target Baru
           </button>
         </div>
@@ -259,7 +267,7 @@ const Goals = ({ user, setUser }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           <div className="bg-white rounded-2xl border border-[#e6ebf2] p-5 shadow-sm">
             <p className="text-sm text-[#7b879f] mb-2">Total Tabungan</p>
-            <h3 className="text-[18px] md:text-[20px] font-extrabold text-[#2563eb]">
+            <h3 className="text-lg md:text-xl font-extrabold text-[#2563eb]">
               {formatRupiah(summary.totalCurrent)}
             </h3>
             <p className="text-xs text-[#9aa4b2] mt-2">Total Dana yang dikumpulkan</p>
@@ -267,7 +275,7 @@ const Goals = ({ user, setUser }) => {
 
           <div className="bg-white rounded-2xl border border-[#e6ebf2] p-5 shadow-sm">
             <p className="text-sm text-[#7b879f] mb-2">Sisa Target Keseluruhan</p>
-            <h3 className="text-[18px] md:text-[20px] font-extrabold text-[#18233f]">
+            <h3 className="text-lg md:text-xl font-extrabold text-[#18233f]">
               {formatRupiah(Math.max(summary.totalTarget - summary.totalCurrent, 0))}
             </h3>
             <p className="text-xs text-[#9aa4b2] mt-2">Dari total target yang dibutuhkan</p>
@@ -275,7 +283,7 @@ const Goals = ({ user, setUser }) => {
 
           <div className="bg-white rounded-2xl border border-[#e6ebf2] p-5 shadow-sm">
             <p className="text-sm text-[#7b879f] mb-2">Total Target</p>
-            <h3 className="text-[18px] md:text-[20px] font-extrabold text-[#18233f]">
+            <h3 className="text-lg md:text-xl font-extrabold text-[#18233f]">
               {goals.length}
             </h3>
             <p className="text-xs text-[#9aa4b2] mt-2">Jumlah target yang dibuat</p>
@@ -284,8 +292,8 @@ const Goals = ({ user, setUser }) => {
 
         {/* Title */}
         <div className="flex items-center gap-2 mb-6">
-          <span className="text-[#2563eb] text-lg">⚑</span>
-          <h2 className="text-[24px] font-bold text-[#18233f]">Target Aktif</h2>
+          <Target className="text-[#2563eb]" size={24} />
+          <h2 className="text-2xl font-bold text-[#18233f]">Target Aktif</h2>
         </div>
 
         {/* Filter */}
@@ -343,43 +351,28 @@ const Goals = ({ user, setUser }) => {
                   {/* Top */}
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="text-[10px] font-extrabold tracking-[1.8px] text-[#2563eb] uppercase mb-1">
-                        DANADIRI
-                      </p>
-                      <h3 className="text-[14px] sm:text-[15px] font-bold text-[#1f2937] leading-snug">
+                      {/* Category Label Removed */}
+                      <h3 className="text-sm sm:text-base font-bold text-[#1f2937] leading-tight">
                         {goal.name}
                       </h3>
                     </div>
 
                     <button
-  onClick={() => openEditModal(goal)}
-  className="w-10 h-10 rounded-[14px] bg-[#eef5ff] text-[#2563eb] flex items-center justify-center hover:bg-[#e2eeff] transition"
-  title="Edit target"
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-5 h-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M5 3v18M5 4h10l-2 4 2 4H5"
-    />
-  </svg>
-</button>
+                      onClick={() => openEditModal(goal)}
+                      className="w-10 h-10 rounded-[14px] bg-[#eef5ff] text-[#2563eb] flex items-center justify-center hover:bg-[#e2eeff] transition"
+                      title="Edit target"
+                    >
+                      <Pencil size={20} />
+                    </button>
                   </div>
 
                   {/* Amount */}
                   <div className="mb-4">
                     <div className="flex items-end flex-wrap gap-1">
-                      <span className="text-[18px] sm:text-[20px] font-extrabold text-[#18233f]">
+                      <span className="text-lg sm:text-xl font-extrabold text-[#18233f]">
                         {formatRupiah(goal.currentAmount || 0)}
                       </span>
-                      <span className="text-[11px] text-[#9aa4b2] mb-[2px]">
+                      <span className="text-xs text-[#9aa4b2] mb-[2px]">
                         dari {formatRupiah(goal.targetAmount || 0)}
                       </span>
                     </div>
@@ -388,10 +381,10 @@ const Goals = ({ user, setUser }) => {
                   {/* Progress */}
                   <div className="mb-5">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-[11px] font-bold text-[#2563eb]">
+                      <span className="text-xs font-bold text-[#2563eb]">
                         Progress
                       </span>
-                      <span className="text-[11px] font-bold text-[#2563eb]">
+                      <span className="text-xs font-bold text-[#2563eb]">
                         {progress.toFixed(0)}%
                       </span>
                     </div>
@@ -410,7 +403,7 @@ const Goals = ({ user, setUser }) => {
                       <p className="text-[9px] font-extrabold tracking-wide text-[#7b879f] uppercase">
                         Setoran
                       </p>
-                      <p className="text-[12px] sm:text-[13px] font-bold text-[#1f2937] mt-1">
+                      <p className="text-xs sm:text-sm font-bold text-[#1f2937] mt-1">
                         {formatRupiah(getRecommendedMonthly(goal))}
                       </p>
                     </div>
@@ -419,8 +412,8 @@ const Goals = ({ user, setUser }) => {
                       <p className="text-[9px] font-extrabold tracking-wide text-[#7b879f] uppercase">
                         Target
                       </p>
-                      <p className="text-[12px] sm:text-[13px] font-bold text-[#1f2937] mt-1">
-                        {getMonthYear(goal.deadline)}
+                      <p className="text-xs sm:text-sm font-bold text-[#1f2937] mt-1">
+                        {getDayMonth(goal.deadline)}
                       </p>
                     </div>
 
@@ -428,8 +421,8 @@ const Goals = ({ user, setUser }) => {
                       <p className="text-[9px] font-extrabold tracking-wide text-[#7b879f] uppercase">
                         Sisa
                       </p>
-                      <p className="text-[12px] sm:text-[13px] font-bold text-[#1f2937] mt-1">
-                        {getMonthsLeft(goal.deadline)}
+                      <p className="text-xs sm:text-sm font-bold text-[#1f2937] mt-1">
+                        {getDaysLeft(goal.deadline)}
                       </p>
                     </div>
                   </div>
@@ -455,7 +448,7 @@ const Goals = ({ user, setUser }) => {
                   </div>
 
                   {/* Footer */}
-                  <div className="text-center text-[10px] text-[#7ea3d7]">
+                  <div className="text-center text-xs text-[#7ea3d7]">
                     Update terakhir: Hari ini,{' '}
                     {new Date().toLocaleTimeString('id-ID', {
                       hour: '2-digit',
@@ -477,12 +470,12 @@ const Goals = ({ user, setUser }) => {
             {/* Icon */}
             <div className="flex justify-center mb-4">
               <div className="w-11 h-11 rounded-2xl bg-[#eef4ff] flex items-center justify-center text-[#2563eb] text-lg shadow-sm">
-                ◎
+                <Target size={24} />
               </div>
             </div>
 
             {/* Title */}
-            <h2 className="text-[28px] md:text-[30px] font-extrabold text-[#18233f] text-center leading-tight">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-[#18233f] text-center leading-tight">
               {editingGoal ? 'Edit Target' : 'Buat Target Baru'}
             </h2>
             <p className="text-center text-[#6f7b91] text-sm mt-2 mb-5">
@@ -492,7 +485,7 @@ const Goals = ({ user, setUser }) => {
             {/* Form */}
             <div className="space-y-3.5">
               <div>
-                <label className="block text-[14px] font-bold text-[#18233f] mb-2">
+                <label className="block text-sm font-bold text-[#18233f] mb-2">
                   Nama Target
                 </label>
                 <input
@@ -502,58 +495,28 @@ const Goals = ({ user, setUser }) => {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4 text-[15px] outline-none focus:ring-2 focus:ring-[#2563eb]"
+                  className="w-full h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4 text-base outline-none focus:ring-2 focus:ring-[#2563eb]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[14px] font-bold text-[#18233f] mb-2">
-                    Jumlah Target
-                  </label>
-                  <div className="flex items-center h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4">
-                    <span className="text-[#18233f] mr-3 font-medium">Rp</span>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={formData.targetAmount}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          targetAmount: e.target.value,
-                        })
-                      }
-                      className="w-full bg-transparent outline-none text-[15px]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[14px] font-bold text-[#18233f] mb-2">
-                    Jumlah Awal
-                  </label>
-                  <div className="flex items-center h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4">
-                    <span className="text-[#18233f] mr-3 font-medium">Rp</span>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={formData.currentAmount}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          currentAmount: e.target.value,
-                        })
-                      }
-                      className="w-full bg-transparent outline-none text-[15px]"
-                    />
-                  </div>
+              <div>
+                <label className="block text-sm font-bold text-[#18233f] mb-2">
+                  Jumlah Target
+                </label>
+                <div className="flex items-center h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4">
+                  <span className="text-[#18233f] mr-3 font-medium">Rp</span>
+                  <input
+                    type="text"
+                    placeholder="0"
+                    value={formData.targetAmount}
+                    onChange={handleAmountChange}
+                    className="w-full bg-transparent outline-none text-base"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[14px] font-bold text-[#18233f] mb-2">
+                <label className="block text-sm font-bold text-[#18233f] mb-2">
                   Tanggal Target
                 </label>
                 <input
@@ -562,22 +525,7 @@ const Goals = ({ user, setUser }) => {
                   onChange={(e) =>
                     setFormData({ ...formData, deadline: e.target.value })
                   }
-                  className="w-full h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4 text-[15px] outline-none focus:ring-2 focus:ring-[#2563eb]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[14px] font-bold text-[#18233f] mb-2">
-                  Kategori
-                </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Liburan"
-                  value={formData.category}
-                  onChange={(e) =>
-                    setFormData({ ...formData, category: e.target.value })
-                  }
-                  className="w-full h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4 text-[15px] outline-none focus:ring-2 focus:ring-[#2563eb]"
+                  className="w-full h-[52px] rounded-[14px] border border-[#dfe6ef] bg-[#f5f7fb] px-4 text-base outline-none focus:ring-2 focus:ring-[#2563eb]"
                 />
               </div>
 

@@ -29,6 +29,7 @@ const transactionSchema = mongoose.Schema(
         'Tagihan',
         'Gaji',
         'Investasi',
+        'Tabungan',
         'Lainnya',
       ],
     },

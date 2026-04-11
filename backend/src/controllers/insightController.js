@@ -9,8 +9,13 @@ const getInsights = asyncHandler(async (req, res) => {
   }
 
   const userId = req.user._id;
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const transactions = await Transaction.find({ user: userId });
+  const transactions = await Transaction.find({ 
+    user: userId,
+    date: { $gte: startOfMonth }
+  });
 
   let income = 0;
   let expense = 0;

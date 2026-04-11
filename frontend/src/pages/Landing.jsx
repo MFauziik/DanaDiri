@@ -15,23 +15,23 @@ export default function Landing() {
 
         <div className="container mx-auto grid lg:grid-cols-2 gap-12 lg:gap-8 items-center relative z-10">
           {/* Left Text */}
-          <div className="max-w-2xl mx-auto">
-            <div className="flex items-center justify-center gap-3 px-6 py-2 rounded-full bg-white shadow-sm border border-gray-100 mb-6 text-sm font-medium text-primary tracking-wide leading-relaxed w-fit">
+          <div className="max-w-2xl mx-auto text-center lg:text-left">
+            <div className="flex items-center justify-center lg:justify-start gap-3 px-4 sm:px-6 py-2 rounded-full bg-white shadow-sm border border-gray-100 mb-6 text-xs sm:text-sm font-medium text-primary tracking-wide leading-relaxed w-fit mx-auto lg:mx-0">
               <span className="flex h-2 w-2 rounded-full bg-secondary"></span>
-              <span className="text-center mx-auto text-center">
+              <span>
                 Dipercaya Banyak Pengguna untuk Kelola Keuangan
               </span>
             </div>
 
-            <h1 className="text-5xl lg:text-6xl font-extrabold font-heading leading-[1.1] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-heading leading-[1.2] mb-6">
               Atur Uangmu Lebih Pintar & <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Capai Tujuan Finansial Lebih Cepat</span>
             </h1>
 
-            <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
+            <p className="text-base sm:text-lg text-gray-600 mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
               DanaDiri membantu kamu memahami ke mana uangmu pergi, mengontrol pengeluaran, dan membangun kebiasaan finansial yang lebih sehat dengan cara yang simpel dan powerful.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
               <Link to="/register" className="bg-primary hover:bg-secondary text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-[0_8px_30px_rgb(45,63,191,0.3)] hover:shadow-[0_8px_30px_rgb(124,77,255,0.4)] hover:-translate-y-1 flex items-center justify-center gap-2">
                 Mulai Gratis Sekarang <ArrowRight className="w-5 h-5" />
               </Link>
@@ -42,29 +42,29 @@ export default function Landing() {
           </div>
 
           {/* Right Image/Dashboard Card */}
-          <div className="relative relative w-full flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-gray-100 bg-white/50 backdrop-blur-sm transform transition-transform duration-700 hover:scale-[1.02]">
+          <div className="relative w-full flex justify-center lg:justify-end mt-12 lg:mt-0">
+            <div className="relative w-full max-w-md lg:max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-gray-100 bg-white/50 backdrop-blur-sm transform transition-transform duration-700 hover:scale-[1.02]">
               {/* Fake dashboard mockup image */}
-              <div className="bg-gray-100 w-full h-[400px] p-4 flex flex-col gap-4">
+              <div className="bg-gray-100 w-full h-[350px] sm:h-[400px] p-3 sm:p-4 flex flex-col gap-3 sm:gap-4">
                 {/* Top row */}
-                <div className="flex gap-4 h-1/4">
-                  <div className="bg-white rounded-xl shadow-sm flex-1 p-4 flex flex-col justify-center">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 h-auto sm:h-1/4">
+                  <div className="bg-white rounded-xl shadow-sm flex-1 p-3 sm:p-4 flex flex-col justify-center">
                     <p className="text-xs text-gray-500 font-medium">Saldo Saat Ini</p>
-                    <p className="text-xl font-bold font-heading text-gray-800 mt-1">Rp 12.500.000</p>
+                    <p className="text-lg sm:text-xl font-bold font-heading text-gray-800 mt-1">Rp 12.500.000</p>
                   </div>
-                  <div className="bg-gradient-to-br from-primary to-secondary rounded-xl shadow-sm flex-1 p-4 flex flex-col justify-center text-white">
+                  <div className="bg-gradient-to-br from-primary to-secondary rounded-xl shadow-sm flex-1 p-3 sm:p-4 flex flex-col justify-center text-white">
                     <p className="text-xs text-white/80 font-medium">Total Pengeluaran</p>
-                    <p className="text-xl font-bold font-heading mt-1">Rp 4.200.000</p>
+                    <p className="text-lg sm:text-xl font-bold font-heading mt-1">Rp 4.200.000</p>
                   </div>
                 </div>
                 {/* Chart mockup */}
-                <div className="bg-white rounded-xl shadow-sm flex-1 p-4">
+                <div className="bg-white rounded-xl shadow-sm flex-1 p-3 sm:p-4 flex flex-col">
                   <div className="flex justify-between items-center mb-4">
                     <p className="text-sm font-semibold text-gray-700">Performa Keuangan</p>
-                    <div className="w-16 h-4 bg-gray-100 rounded-full"></div>
+                    <div className="w-12 sm:w-16 h-3 sm:h-4 bg-gray-100 rounded-full"></div>
                   </div>
                   {/* Fake bars */}
-                  <div className="flex items-end gap-2 h-32 pt-4">
+                  <div className="flex items-end gap-2 flex-1 pt-2">
                     <div className="bg-blue-100 w-full h-[40%] rounded-t-sm"></div>
                     <div className="bg-primary w-full h-[70%] rounded-t-sm"></div>
                     <div className="bg-blue-100 w-full h-[50%] rounded-t-sm"></div>
@@ -76,13 +76,13 @@ export default function Landing() {
               </div>
 
               {/* Floating Overlay Info */}
-              <div className="absolute bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl border border-gray-100 flex items-center gap-4 animate-bounce" style={{ animationDuration: '3s' }}>
-                <div className="bg-green-100 p-2 rounded-full text-green-600">
-                  <span className="font-bold flex items-center"><TrendingDown className="w-4 h-4 mr-1" /> 12%</span>
+              <div className="absolute bottom-4 left-4 sm:bottom-6 sm:-left-6 bg-white p-3 sm:p-4 rounded-xl shadow-xl border border-gray-100 flex items-center gap-3 sm:gap-4 animate-bounce" style={{ animationDuration: '3s' }}>
+                <div className="bg-green-100 p-1.5 sm:p-2 rounded-full text-green-600">
+                  <span className="font-bold flex items-center text-xs sm:text-sm"><TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> 12%</span>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Pengeluaran Lebih Hemat</p>
-                  <p className="text-sm font-bold text-gray-800">Dibanding bulan lalu</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Pengeluaran Lebih Hemat</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-800">Dibanding bulan lalu</p>
                 </div>
               </div>
             </div>

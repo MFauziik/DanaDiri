@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Transaction = require('../models/Transaction');
+const { calculateBalance } = require('../utils/balanceUtils');
 
 
 // @desc    Mendapatkan semua transaksi user + filter + search + pagination
@@ -72,8 +73,21 @@ const createTransaction = asyncHandler(async (req, res) => {
   const { amount, type, category, description, date } = req.body;
 
   if (!amount || !type || !category || !date) {
-    res.status(400);
-    throw new Error('Field wajib: amount, type, category, date');
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Field wajib: amount, type, category, date' 
+    });
+  }
+
+  // Jika ini pengeluaran, cek apakah saldo mencukupi
+  if (type === 'expense') {
+    const currentBalance = await calculateBalance(req.user._id);
+    if (currentBalance < amount) {
+      return res.status(200).json({ 
+        success: false, 
+        message: 'Saldo tidak cukup untuk melakukan transaksi ini' 
+      });
+    }
   }
 
   const transaction = await Transaction.create({
@@ -103,6 +117,33 @@ const updateTransaction = asyncHandler(async (req, res) => {
   if (transaction.user.toString() !== req.user._id.toString()) {
     res.status(401);
     throw new Error('Tidak diizinkan mengupdate transaksi ini');
+  }
+
+  // Cek validasi saldo jika update mengakibatkan perubahan finansial
+  const oldAmount = transaction.amount;
+  const oldType = transaction.type;
+  const newAmount = req.body.amount !== undefined ? req.body.amount : oldAmount;
+  const newType = req.body.type !== undefined ? req.body.type : oldType;
+
+  // Hitung efek ke saldo:
+  // Saldo saat ini (tanpa transaksi lama) + transaksi baru
+  const currentBalance = await calculateBalance(req.user._id);
+  
+  // Saldo tanpa transaksi ini
+  const balanceWithoutThis = oldType === 'income' 
+    ? currentBalance - oldAmount 
+    : currentBalance + oldAmount;
+  
+  // Saldo setelah transaksi baru diterapkan
+  const projectedBalance = newType === 'income'
+    ? balanceWithoutThis + newAmount
+    : balanceWithoutThis - newAmount;
+
+  if (projectedBalance < 0) {
+    return res.status(200).json({ 
+      success: false, 
+      message: 'Saldo tidak cukup untuk melakukan perubahan ini' 
+    });
   }
 
   const updatedTransaction = await Transaction.findByIdAndUpdate(
@@ -210,22 +251,32 @@ const getSummary = asyncHandler(async (req, res) => {
     });
   }
 
-  // TOTAL & CATEGORY (Semua transaksi untuk summary dashboard)
-  transactions.forEach((t) => {
-    if (t.type === 'income') {
-      totalIncome += t.amount;
-    } else {
-      totalExpense += t.amount;
+  // TOTAL & CATEGORY (Filtered to current month for dashboard display, all-time for balance)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  let absoluteIncome = 0;
+  let absoluteExpense = 0;
 
-      if (categoryExpense[t.category]) {
-        categoryExpense[t.category] += t.amount;
-      } else {
-        categoryExpense[t.category] = t.amount;
+  transactions.forEach((t) => {
+    const tDate = new Date(t.date);
+    const isCurrentMonth = tDate >= startOfMonth;
+
+    if (t.type === 'income') {
+      absoluteIncome += t.amount;
+      if (isCurrentMonth) totalIncome += t.amount;
+    } else {
+      absoluteExpense += t.amount;
+      if (isCurrentMonth) {
+        totalExpense += t.amount;
+        if (categoryExpense[t.category]) {
+          categoryExpense[t.category] += t.amount;
+        } else {
+          categoryExpense[t.category] = t.amount;
+        }
       }
     }
   });
 
-  const balance = totalIncome - totalExpense;
+  const balance = absoluteIncome - absoluteExpense;
 
   res.json({
     totalIncome,
