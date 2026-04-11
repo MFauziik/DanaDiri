@@ -40,6 +40,13 @@ ChartJS.register(
 
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
+// Helper: handle Cloudinary URL (full) OR legacy local path (/uploads/...)
+const getProfileUrl = (pic) => {
+  if (!pic) return '';
+  if (pic.startsWith('http://') || pic.startsWith('https://')) return pic;
+  return `${API_BASE_URL}${pic}`;
+};
+
 const Dashboard = ({ user, setUser }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -378,7 +385,7 @@ if (insight.status === 'Bahaya') {
                 <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-xs overflow-hidden border border-slate-200">
                   {user?.profilePicture ? (
                     <img 
-                      src={`${API_BASE_URL}${user.profilePicture}`} 
+                      src={getProfileUrl(user.profilePicture)} 
                       alt="Profile" 
                       className="w-full h-full object-cover" 
                     />

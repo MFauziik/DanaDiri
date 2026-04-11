@@ -5,13 +5,20 @@ import { updateProfile } from '../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
+// Helper: handle Cloudinary URL (full) OR legacy local path (/uploads/...)
+const getProfileUrl = (pic) => {
+  if (!pic) return '';
+  if (pic.startsWith('http://') || pic.startsWith('https://')) return pic;
+  return `${API_BASE_URL}${pic}`;
+};
+
 const Profile = ({ user, setUser }) => {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [password, setPassword] = useState('');
   const [profilePic, setProfilePic] = useState(null);
-  const [preview, setPreview] = useState(user?.profilePicture ? `${API_BASE_URL}${user.profilePicture}` : '');
+  const [preview, setPreview] = useState(getProfileUrl(user?.profilePicture));
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -23,7 +30,7 @@ const Profile = ({ user, setUser }) => {
       setEmail(user.email || '');
       setPhone(user.phone || '');
       if (user.profilePicture) {
-        setPreview(`${API_BASE_URL}${user.profilePicture}`);
+        setPreview(getProfileUrl(user.profilePicture));
       }
     }
   }, [user]);
@@ -90,7 +97,7 @@ const Profile = ({ user, setUser }) => {
       setName(user.name || '');
       setEmail(user.email || '');
       setPhone(user.phone || '');
-      setPreview(user.profilePicture ? `${API_BASE_URL}${user.profilePicture}` : '');
+      setPreview(getProfileUrl(user.profilePicture));
     } else {
       setName('');
       setEmail('');
