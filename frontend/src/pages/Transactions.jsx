@@ -10,7 +10,8 @@ import {
 } from '../services/recurring';
 import { formatRupiah } from '../utils/currency';
 import CategoryIcon from '../components/CategoryIcon';
-
+import { exportToPDF, exportToExcel } from '../utils/export';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 const Transactions = ({ user, setUser }) => {
   const [transactions, setTransactions] = useState([]);
   const [recurrings, setRecurrings] = useState([]);
@@ -219,7 +220,25 @@ const Transactions = ({ user, setUser }) => {
   const uniqueCategories = [
     ...new Set(transactions.map((t) => t.category).filter(Boolean)),
   ];
-  
+
+  const uniqueMonths = useMemo(() => {
+    const monthsSet = new Set();
+    transactions.forEach((t) => {
+      if (t.date) {
+        const date = new Date(t.date);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        monthsSet.add(`${yyyy}-${mm}`);
+      }
+    });
+    return Array.from(monthsSet).sort().reverse();
+  }, [transactions]);
+
+  const formatMonthLabel = (yyyyMM) => {
+    const [year, month] = yyyyMM.split('-');
+    const date = new Date(year, month - 1, 1);
+    return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  };
 
   
 const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
@@ -484,10 +503,11 @@ const handlePageClick = (page) => {
                     className="h-11 px-4 rounded-xl bg-[#f7f8fc] border border-transparent focus:border-[#2f6df6] focus:bg-white outline-none text-sm text-[#344054] min-w-[170px]"
                   >
                     <option value="">Semua Tanggal</option>
-                    <option value="2023-10">Oktober 2023</option>
-                    <option value="2023-11">November 2023</option>
-                    <option value="2023-12">Desember 2023</option>
-                    <option value="2024-01">Januari 2024</option>
+                    {uniqueMonths.map((monthStr, index) => (
+                      <option key={index} value={monthStr}>
+                        {formatMonthLabel(monthStr)}
+                      </option>
+                    ))}
                   </select>
 
                   <select
@@ -514,9 +534,27 @@ const handlePageClick = (page) => {
                   </select>
                 </div>
 
-                <p className="text-sm text-[#98a2b3] whitespace-nowrap">
-                  Menampilkan {filteredTransactions.length} transaksi
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm text-[#98a2b3] whitespace-nowrap hidden sm:block">
+                    Menampilkan {filteredTransactions.length} transaksi
+                  </p>
+                  <button
+                    onClick={() => exportToPDF(filteredTransactions)}
+                    className="h-11 px-4 rounded-xl bg-[#fff0f3] hover:bg-[#ffe7ec] text-[#ff4d6d] font-semibold text-sm transition flex items-center gap-2 border border-[#ffe7ec]"
+                    title="Ekspor ke PDF"
+                  >
+                    <FileText size={18} />
+                    PDF
+                  </button>
+                  <button
+                    onClick={() => exportToExcel(filteredTransactions)}
+                    className="h-11 px-4 rounded-xl bg-[#eaf8f0] hover:bg-[#e9f7ef] text-[#12b76a] font-semibold text-sm transition flex items-center gap-2 border border-[#e9f7ef]"
+                    title="Ekspor ke Excel"
+                  >
+                    <FileSpreadsheet size={18} />
+                    Excel
+                  </button>
+                </div>
               </div>
             </div>
 
