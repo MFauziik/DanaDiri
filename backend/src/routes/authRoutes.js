@@ -12,16 +12,7 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 
 const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, path.join(__dirname, '../../public/uploads/'));
-  },
-  filename(req, file, cb) {
-    cb(null, `${req.user._id}-${Date.now()}${path.extname(file.originalname)}`);
-  }
-});
+const { storage } = require('../config/cloudinary');
 
 const upload = multer({
   storage,

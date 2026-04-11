@@ -98,9 +98,9 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.email = req.body.email || user.email;
     user.phone = req.body.phone || user.phone;
 
-    // Handle foto profil jika ada
+    // Handle foto profil jika ada — simpan URL Cloudinary (permanen)
     if (req.file) {
-      user.profilePicture = `/uploads/${req.file.filename}`;
+      user.profilePicture = req.file.path; // URL Cloudinary https://res.cloudinary.com/...
     }
 
     if (req.body.password) {
