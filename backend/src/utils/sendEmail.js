@@ -1,34 +1,33 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const sendEmail = async (options) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Konfigurasi email (EMAIL_USER/EMAIL_PASS) belum disetel di environment variables');
-  }
+  // Jika API Key Resend ada, gunakan Resend (Direkomendasikan untuk Production/Railway)
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    // Menambahkan timeout untuk mencegah "hang" di Railway
-    connectionTimeout: 10000, // 10 detik
-    greetingTimeout: 5000,
-    socketTimeout: 15000,
-    pool: true, // Re-use koneksi
-  });
+    try {
+      const { data, error } = await resend.emails.send({
+        from: 'DanaDiri <onboarding@resend.dev>', // Gunakan onboarding@resend.dev jika belum punya domain sendiri
+        to: options.email,
+        subject: options.subject,
+        text: options.message,
+        html: options.html,
+      });
 
-  const mailOptions = {
-    from: `"DanaDiri" <${process.env.EMAIL_USER}>`,
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-    html: options.html,
-  };
+      if (error) {
+        throw new Error(error.message);
+      }
 
-  await transporter.sendMail(mailOptions);
+      return data;
+    } catch (err) {
+      console.error('🔥 Resend API Error:', err);
+      throw new Error(`Gagal mengirim email via Resend: ${err.message}`);
+    }
+  } 
+  
+  // LOGIKA FALLBACK (Optional: Jika ingin tetap bisa pakai SMTP di lokal)
+  console.warn('⚠️ RESEND_API_KEY tidak ditemukan, email tidak dapat dikirim di lingkungan cloud.');
+  throw new Error('Konfigurasi email (RESEND_API_KEY) belum disetel di Railway.');
 };
 
 module.exports = sendEmail;
