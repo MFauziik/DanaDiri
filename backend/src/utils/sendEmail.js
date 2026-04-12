@@ -20,12 +20,13 @@ const sendEmail = async (options) => {
     tls: {
       rejectUnauthorized: false // Untuk menghindari issues di Railway
     },
-    connectionTimeout: 60000, // 60 seconds
-    greetingTimeout: 30000,   // 30 seconds
-    socketTimeout: 60000,     // 60 seconds
-    maxConnections: 5,
-    maxMessages: 100,
-    pool: true // Enable connection pooling
+    connectionTimeout: 30000, // 30 seconds - lebih cepat untuk Railway
+    greetingTimeout: 15000,   // 15 seconds
+    socketTimeout: 30000,     // 30 seconds
+    maxConnections: 3,        // Kurangi untuk Railway
+    maxMessages: 50,          // Kurangi untuk stability
+    pool: true,               // Enable connection pooling
+    debug: process.env.NODE_ENV === 'development' // Debug mode untuk development
   });
 
   const mailOptions = {
@@ -39,25 +40,49 @@ const sendEmail = async (options) => {
     html: options.html,
   };
 
-  try {
-    // Verify connection sebelum mengirim email
-    await transporter.verify();
-    console.log('SMTP connection verified');
-    
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email terkirim via Nodemailer:', info.messageId);
-    return info;
-  } catch (error) {
-    console.error('Nodemailer Error:', error);
-    
-    // Specific error handling untuk Railway
-    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
-      throw new Error('Koneksi email timeout. Pastikan konfigurasi SMTP benar dan coba lagi.');
-    } else if (error.code === 'EAUTH') {
-      throw new Error('Authentication failed. Periksa EMAIL_USER dan EMAIL_PASS.');
-    } else {
-      throw new Error(`Gagal mengirim email: ${error.message}`);
+  // Retry logic untuk connection stability
+  const maxRetries = 3;
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt}/${maxRetries} to send email to ${options.email}`);
+      
+      // Verify connection sebelum mengirim email
+      await transporter.verify();
+      console.log('SMTP connection verified');
+      
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Email terkirim via Nodemailer:', info.messageId);
+      return info;
+      
+    } catch (error) {
+      lastError = error;
+      console.error(`Attempt ${attempt} failed:`, error.message);
+      
+      // Jika bukan timeout/connection error, jangan retry
+      if (error.code !== 'ETIMEDOUT' && error.code !== 'ECONNREFUSED') {
+        break;
+      }
+      
+      // Wait sebelum retry (exponential backoff)
+      if (attempt < maxRetries) {
+        const waitTime = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
     }
+  }
+
+  // Handle final error setelah semua retries
+  console.error('All email attempts failed:', lastError);
+  
+  if (lastError.code === 'ETIMEDOUT' || lastError.code === 'ECONNREFUSED') {
+    throw new Error('Koneksi email timeout. Pastikan:\n1. EMAIL_HOST dan EMAIL_PORT benar (smtp.gmail.com:587)\n2. Tidak ada firewall blocking\n3. Railway environment sudah benar');
+  } else if (lastError.code === 'EAUTH') {
+    throw new Error('Authentication failed. Periksa:\n1. EMAIL_USER benar\n2. EMAIL_PASS adalah App Password (bukan password biasa)\n3. 2FA Gmail sudah aktif');
+  } else {
+    throw new Error(`Gagal mengirim email: ${lastError.message}`);
   }
 };
 
