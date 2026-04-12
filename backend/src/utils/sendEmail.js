@@ -1,33 +1,35 @@
 const { Resend } = require('resend');
 
 const sendEmail = async (options) => {
-  // Jika API Key Resend ada, gunakan Resend (Direkomendasikan untuk Production/Railway)
-  if (process.env.RESEND_API_KEY) {
-    const resend = new Resend(process.env.RESEND_API_KEY);
+  // Gunakan RESEND_API_KEY dari environment variables
+  if (!process.env.RESEND_API_KEY) {
+    console.error('❌ RESEND_API_KEY tidak ditemukan di environment variables!');
+    throw new Error('Konfigurasi email (RESEND_API_KEY) belum disetel di Railway.');
+  }
 
-    try {
-      const { data, error } = await resend.emails.send({
-        from: 'DanaDiri <onboarding@resend.dev>', // Gunakan onboarding@resend.dev jika belum punya domain sendiri
-        to: options.email,
-        subject: options.subject,
-        text: options.message,
-        html: options.html,
-      });
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
-      if (error) {
-        throw new Error(error.message);
-      }
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'DanaDiri <onboarding@resend.dev>', // Nama pengirim tetap DanaDiri
+      to: options.email,
+      subject: options.subject,
+      reply_to: 'capstonedanadiri@gmail.com', // Jika user balas email, masuk ke Gmail Anda
+      text: options.message,
+      html: options.html,
+    });
 
-      return data;
-    } catch (err) {
-      console.error('🔥 Resend API Error:', err);
-      throw new Error(`Gagal mengirim email via Resend: ${err.message}`);
+    if (error) {
+      console.error('🔥 Resend Error details:', error);
+      throw new Error(error.message);
     }
-  } 
-  
-  // LOGIKA FALLBACK (Optional: Jika ingin tetap bisa pakai SMTP di lokal)
-  console.warn('⚠️ RESEND_API_KEY tidak ditemukan, email tidak dapat dikirim di lingkungan cloud.');
-  throw new Error('Konfigurasi email (RESEND_API_KEY) belum disetel di Railway.');
+
+    console.log('✅ Email terkirim via Resend:', data.id);
+    return data;
+  } catch (err) {
+    console.error('🔥 Resend API Error:', err);
+    throw new Error(`Gagal mengirim email: ${err.message}`);
+  }
 };
 
 module.exports = sendEmail;
