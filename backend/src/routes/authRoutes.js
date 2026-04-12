@@ -3,10 +3,7 @@ const {
   registerUser,
   loginUser,
   getUserProfile,
-  updateUserProfile,
-  forgotPassword,
-  verifyOTP,
-  resetPassword
+  updateUserProfile
 } = require('../controllers/authController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -35,9 +32,5 @@ router.get('/profile', protect, getUserProfile);
 // 🔥 ROUTE EDIT PROFILE WITH UPLOAD
 router.put('/profile', protect, upload.single('profilePicture'), updateUserProfile);
 
-// 🔥 ROUTE FORGOT PASSWORD
-router.post('/forgot-password', forgotPassword);
-router.post('/verify-otp', verifyOTP);
-router.post('/reset-password', resetPassword);
 
 module.exports = router;

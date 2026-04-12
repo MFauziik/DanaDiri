@@ -76,14 +76,9 @@ const Login = ({ setUser }) => {
 
             {/* Password */}
             <div className="mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-semibold text-slate-700" htmlFor="password">
-                  Kata Sandi
-                </label>
-                <Link to="/forgot-password" size="sm" className="text-xs font-semibold text-secondary hover:text-blue-700 transition">
-                  Lupa sandi?
-                </Link>
-              </div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="password">
+                Kata Sandi
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Lock size={18} />

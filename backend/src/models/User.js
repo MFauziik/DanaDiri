@@ -25,12 +25,6 @@ const userSchema = mongoose.Schema(
       required: [true, 'Password harus diisi'],
       minlength: 6,
     },
-    resetPasswordOTP: {
-      type: String,
-    },
-    resetPasswordExpires: {
-      type: Date,
-    },
   },
   {
     timestamps: true,
