@@ -8,7 +8,7 @@ const sendEmail = async (options) => {
   }
 
   // Buat transporter dengan konfigurasi yang aman untuk Railway
-  const transporter = nodemailer.createTransporter({
+  const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: parseInt(process.env.EMAIL_PORT),
     secure: process.env.EMAIL_SECURE === 'true', // true untuk 465, false untuk port lain
