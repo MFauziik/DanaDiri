@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CATEGORIES, TRANSACTION_TYPES, DAYS } from '../utils/constants';
 import { formatNumber, parseRupiah } from '../utils/currency';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 
 const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -132,6 +132,19 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
           placeholder="Contoh: Gaji, Tagihan Listrik, dll"
           className={`${inputClass} h-28 py-4 resize-none`}
         ></textarea>
+      </div>
+
+      {/* Note Box */}
+      <div className="bg-[#f0f4ff] border border-[#e0e7ff] rounded-2xl p-4 flex gap-4">
+        <div className="w-10 h-10 rounded-xl bg-white border border-[#e0e7ff] flex items-center justify-center text-blue-500 shrink-0 shadow-sm">
+          <Info size={20} />
+        </div>
+        <div>
+          <p className="text-xs text-[#42526e] leading-relaxed">
+            <span className="font-bold text-blue-600 block mb-1">Catatan Sistem:</span>
+            Sistem cron job akan memproses transaksi ini secara otomatis pada pukul 00:01 setiap hari tanggal berlakunya, atau divalidasi selambat-lambatnya setiap interval 1 jam sekali.
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center justify-end gap-10 pt-4 border-t border-gray-100">

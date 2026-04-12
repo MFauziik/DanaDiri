@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, Info } from 'lucide-react';
 import RecurringForm from './RecurringForm';
 import { formatRupiah } from '../utils/currency';
 
@@ -44,7 +44,7 @@ const RecurringModal = ({ initialData = {}, isOpen, onClose, onSubmit }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-      <div 
+      <div
         ref={modalRef}
         className="relative mx-auto p-6 border w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl rounded-2xl bg-white"
       >
@@ -63,7 +63,7 @@ const RecurringModal = ({ initialData = {}, isOpen, onClose, onSubmit }) => {
           </div>
         </div>
 
-        <RecurringForm 
+        <RecurringForm
           initialData={initialData}
           onSubmit={onSubmit}
           onCancel={onClose}
