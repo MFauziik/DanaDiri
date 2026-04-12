@@ -44,6 +44,8 @@ const startServer = async () => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
+    const { notFound, errorHandler } = require('./src/middleware/errorMiddleware');
+
     // Routes
     app.use('/api/auth', require('./src/routes/authRoutes'));
     app.use('/api/goals', require('./src/routes/goalRoutes'));
@@ -51,6 +53,10 @@ const startServer = async () => {
     app.use('/api/budgets', require('./src/routes/budgetRoutes'));
     app.use('/api/recurring', require('./src/routes/recurringRoutes'));
     app.use('/api/insights', require('./src/routes/insightRoutes'));
+
+    // Error Handlers
+    app.use(notFound);
+    app.use(errorHandler);
 
     const PORT = process.env.PORT || 5000;
 

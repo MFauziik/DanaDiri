@@ -1,6 +1,10 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Konfigurasi email (EMAIL_USER/EMAIL_PASS) belum disetel di environment variables');
+  }
+
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
