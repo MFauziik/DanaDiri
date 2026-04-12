@@ -178,12 +178,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     res.status(200).json({ message: 'OTP telah dikirim ke email' });
   } catch (error) {
+    console.error('🔥 Nodemailer Error:', error);
     user.resetPasswordOTP = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
 
     res.status(500);
-    throw new Error('Email tidak dapat dikirim');
+    throw new Error(`Email tidak dapat dikirim: ${error.message}`);
   }
 });
 
