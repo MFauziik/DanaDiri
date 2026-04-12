@@ -38,6 +38,7 @@ const registerUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      profilePicture: user.profilePicture,
       token: generateToken(user._id),
     });
   } else {
@@ -67,6 +68,7 @@ const loginUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      profilePicture: user.profilePicture,
       token: generateToken(user._id),
       success: true
     });
@@ -123,6 +125,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       phone: updatedUser.phone,
       profilePicture: updatedUser.profilePicture,
       token: generateToken(updatedUser._id),
+      success: true
     });
   } else {
     res.status(404);

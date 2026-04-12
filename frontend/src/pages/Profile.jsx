@@ -8,8 +8,21 @@ const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http:
 // Helper: handle Cloudinary URL (full) OR legacy local path (/uploads/...)
 const getProfileUrl = (pic) => {
   if (!pic) return '';
-  if (pic.startsWith('http://') || pic.startsWith('https://')) return pic;
-  return `${API_BASE_URL}${pic}`;
+  
+  // Handle corrupted schemes
+  if (pic.startsWith('https//')) pic = pic.replace('https//', 'https://');
+  if (pic.startsWith('http//')) pic = pic.replace('http//', 'http://');
+
+  if (pic.startsWith('http://') || pic.startsWith('https://') || pic.includes('res.cloudinary.com')) {
+    // Optimasi Cloudinary: paksa ukuran kecil
+    if (pic.includes('res.cloudinary.com') && !pic.includes('/upload/c_fill')) {
+      return pic.replace('/upload/', '/upload/c_fill,w_150,h_150,q_auto/');
+    }
+    return pic;
+  }
+  
+  const prefix = pic.startsWith('/') ? '' : '/';
+  return `${API_BASE_URL}${prefix}${pic}`;
 };
 
 const Profile = ({ user, setUser }) => {

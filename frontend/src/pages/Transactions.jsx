@@ -13,11 +13,30 @@ import { formatRupiah } from '../utils/currency';
 import CategoryIcon from '../components/CategoryIcon';
 import { exportToPDF, exportToExcel } from '../utils/export';
 import { FileText, FileSpreadsheet } from 'lucide-react';
+
+const CATEGORY_OPTIONS = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Tagihan', 'Gaji', 'Investasi', 'Tabungan', 'Lainnya'];
+
+const generateLast12Months = () => {
+  const list = [];
+  const d = new Date();
+  for(let i=0; i<12; i++) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    list.push(`${yyyy}-${mm}`);
+    d.setMonth(d.getMonth() - 1);
+  }
+  return list;
+};
+const MONTH_OPTIONS = generateLast12Months();
 const Transactions = ({ user, setUser }) => {
   const [transactions, setTransactions] = useState([]);
   const [recurrings, setRecurrings] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 8;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [summaryIncome, setSummaryIncome] = useState(0);
+  const [summaryExpense, setSummaryExpense] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,79 +52,48 @@ const Transactions = ({ user, setUser }) => {
   const [selectedType, setSelectedType] = useState('');
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
-   const filteredTransactions = useMemo(() => {
-  return transactions.filter((transaction) => {
-    const matchesSearch =
-      !searchTerm ||
-      transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.category?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const transactionDate = transaction.date
-      ? new Date(transaction.date)
-      : null;
-
-    const transactionMonth = transactionDate
-      ? `${transactionDate.getFullYear()}-${String(
-          transactionDate.getMonth() + 1
-        ).padStart(2, '0')}`
-      : '';
-
-    const matchesMonth =
-      !selectedMonth || transactionMonth === selectedMonth;
-
-    const matchesCategory =
-      !selectedCategory || transaction.category === selectedCategory;
-
-    const matchesType =
-      !selectedType || transaction.type === selectedType;
-
-    return (
-      matchesSearch &&
-      matchesMonth &&
-      matchesCategory &&
-      matchesType
-    );
-  });
-}, [transactions, searchTerm, selectedMonth, selectedCategory, selectedType]);
+    fetchTransactions();
+  }, [currentPage, searchTerm, selectedMonth, selectedCategory, selectedType]);
 
   useEffect(() => {
-  setCurrentPage(1);
-}, [filteredTransactions]);
+    fetchRecurrings();
+  }, []);
 
-  const fetchAllData = async () => {
+  const fetchRecurrings = async () => {
+    try {
+      const recurringsRes = await getRecurring();
+      setRecurrings(Array.isArray(recurringsRes) ? recurringsRes : []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchTransactions = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage
+      };
+      if (searchTerm) params.search = searchTerm;
+      if (selectedMonth) params.month = selectedMonth;
+      if (selectedCategory) params.category = selectedCategory;
+      if (selectedType) params.type = selectedType;
 
-      const [transactionsRes, recurringsRes] = await Promise.all([
-        api.get('/transactions'),
-        getRecurring(),
-      ]);
+      const { data } = await api.get('/transactions', { params });
 
-      let transactionsData = [];
-      if (Array.isArray(transactionsRes.data)) {
-        transactionsData = transactionsRes.data;
-      } else if (
-        transactionsRes.data &&
-        Array.isArray(transactionsRes.data.data)
-      ) {
-        transactionsData = transactionsRes.data.data;
-      } else if (
-        transactionsRes.data &&
-        Array.isArray(transactionsRes.data.transactions)
-      ) {
-        transactionsData = transactionsRes.data.transactions;
-      }
-
-      setTransactions(transactionsData || []);
-      setRecurrings(Array.isArray(recurringsRes) ? recurringsRes : []);
+      setTransactions(Array.isArray(data.transactions) ? data.transactions : []);
+      setTotalPages(data.pages || 1);
+      setTotalTransactions(data.total || 0);
+      setSummaryIncome(data.summaryIncome || 0);
+      setSummaryExpense(data.summaryExpense || 0);
+      
     } catch (error) {
       console.error('Gagal mengambil data:', error);
       setError(error.response?.data?.message || 'Gagal mengambil data');
       setTransactions([]);
-      setRecurrings([]);
     } finally {
       setLoading(false);
     }
@@ -120,7 +108,8 @@ const Transactions = ({ user, setUser }) => {
         return;
       }
 
-      await fetchAllData();
+      await fetchTransactions();
+        await fetchRecurrings();
       setShowForm(false);
     } catch (error) {
       console.error('Gagal menambah transaksi:', error);
@@ -137,7 +126,8 @@ const Transactions = ({ user, setUser }) => {
         return;
       }
 
-      await fetchAllData();
+      await fetchTransactions();
+        await fetchRecurrings();
       setEditingTransaction(null);
     } catch (error) {
       console.error('Gagal mengupdate transaksi:', error);
@@ -149,7 +139,8 @@ const Transactions = ({ user, setUser }) => {
     if (window.confirm('Yakin ingin menghapus transaksi ini?')) {
       try {
         await api.delete(`/transactions/${id}`);
-        await fetchAllData();
+        await fetchTransactions();
+        await fetchRecurrings();
       } catch (error) {
         console.error('Gagal menghapus transaksi:', error);
         alert('Gagal menghapus transaksi');
@@ -160,7 +151,8 @@ const Transactions = ({ user, setUser }) => {
   const handleAddRecurring = async (formData) => {
     try {
       await createRecurring(formData);
-      await fetchAllData();
+      await fetchTransactions();
+        await fetchRecurrings();
       setShowRecurringForm(false);
       alert('Transaksi berulang berhasil ditambahkan!');
     } catch (error) {
@@ -175,7 +167,8 @@ const Transactions = ({ user, setUser }) => {
   const handleUpdateRecurring = async (formData) => {
     try {
       await updateRecurring(editingRecurring._id, formData);
-      await fetchAllData();
+      await fetchTransactions();
+        await fetchRecurrings();
       setEditingRecurring(null);
       alert('Transaksi berulang berhasil diupdate!');
     } catch (error) {
@@ -188,7 +181,8 @@ const Transactions = ({ user, setUser }) => {
     if (window.confirm('Yakin ingin menghapus transaksi berulang ini?')) {
       try {
         await deleteRecurring(id);
-        await fetchAllData();
+        await fetchTransactions();
+        await fetchRecurrings();
       } catch (error) {
         console.error('Gagal menghapus transaksi berulang:', error);
         alert('Gagal menghapus transaksi berulang');
@@ -217,50 +211,13 @@ const Transactions = ({ user, setUser }) => {
     return { datePart, timePart };
   };
 
-  const totalIncome = useMemo(() => {
-    return transactions
-      .filter((t) => t.type === 'income')
-      .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-  }, [transactions]);
-
-  const totalExpense = useMemo(() => {
-    return transactions
-      .filter((t) => t.type === 'expense')
-      .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-  }, [transactions]);
-
-  const remainingBudget = totalIncome - totalExpense;
-
-  const uniqueCategories = [
-    ...new Set(transactions.map((t) => t.category).filter(Boolean)),
-  ];
-
-  const uniqueMonths = useMemo(() => {
-    const monthsSet = new Set();
-    transactions.forEach((t) => {
-      if (t.date) {
-        const date = new Date(t.date);
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        monthsSet.add(`${yyyy}-${mm}`);
-      }
-    });
-    return Array.from(monthsSet).sort().reverse();
-  }, [transactions]);
+  const remainingBudget = summaryIncome - summaryExpense;
 
   const formatMonthLabel = (yyyyMM) => {
     const [year, month] = yyyyMM.split('-');
     const date = new Date(year, month - 1, 1);
     return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   };
-
-  
-const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-
-const paginatedTransactions = useMemo(() => {
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  return filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
-}, [filteredTransactions, currentPage]);
 
     
 
@@ -366,7 +323,7 @@ const handlePageClick = (page) => {
                       Total Pemasukan
                     </p>
                     <h3 className="text-2xl font-bold text-[#12b76a] mt-1">
-                      {formatRupiah(totalIncome)}
+                      {formatRupiah(summaryIncome)}
                     </h3>
                   </div>
                 </div>
@@ -387,7 +344,7 @@ const handlePageClick = (page) => {
                       Total Pengeluaran
                     </p>
                     <h3 className="text-2xl font-bold text-[#ff4d6d] mt-1">
-                      {formatRupiah(totalExpense)}
+                      {formatRupiah(summaryExpense)}
                     </h3>
                   </div>
                 </div>
@@ -526,7 +483,7 @@ const handlePageClick = (page) => {
                     className="h-11 px-4 rounded-xl bg-[#f7f8fc] border border-transparent focus:border-[#2f6df6] focus:bg-white outline-none text-sm text-[#344054] min-w-[170px]"
                   >
                     <option value="">Semua Tanggal</option>
-                    {uniqueMonths.map((monthStr, index) => (
+                    {MONTH_OPTIONS.map((monthStr, index) => (
                       <option key={index} value={monthStr}>
                         {formatMonthLabel(monthStr)}
                       </option>
@@ -539,7 +496,7 @@ const handlePageClick = (page) => {
                     className="h-11 px-4 rounded-xl bg-[#f7f8fc] border border-transparent focus:border-[#2f6df6] focus:bg-white outline-none text-sm text-[#344054] min-w-[150px]"
                   >
                     <option value="">Kategori</option>
-                    {uniqueCategories.map((category, index) => (
+                    {CATEGORY_OPTIONS.map((category, index) => (
                       <option key={index} value={category}>
                         {category}
                       </option>
@@ -559,10 +516,10 @@ const handlePageClick = (page) => {
 
                 <div className="flex items-center gap-3">
                   <p className="text-sm text-[#98a2b3] whitespace-nowrap hidden sm:block">
-                    Menampilkan {filteredTransactions.length} transaksi
+                    Menampilkan {totalTransactions} transaksi
                   </p>
                   <button
-                    onClick={() => exportToPDF(filteredTransactions)}
+                    onClick={() => exportToPDF(transactions)}
                     className="h-11 px-4 rounded-xl bg-[#fff0f3] hover:bg-[#ffe7ec] text-[#ff4d6d] font-semibold text-sm transition flex items-center gap-2 border border-[#ffe7ec]"
                     title="Ekspor ke PDF"
                   >
@@ -570,7 +527,7 @@ const handlePageClick = (page) => {
                     PDF
                   </button>
                   <button
-                    onClick={() => exportToExcel(filteredTransactions)}
+                    onClick={() => exportToExcel(transactions)}
                     className="h-11 px-4 rounded-xl bg-[#eaf8f0] hover:bg-[#e9f7ef] text-[#12b76a] font-semibold text-sm transition flex items-center gap-2 border border-[#e9f7ef]"
                     title="Ekspor ke Excel"
                   >
@@ -582,7 +539,7 @@ const handlePageClick = (page) => {
             </div>
 
             {/* TABLE */}
-            {filteredTransactions.length === 0 ? (
+            {transactions.length === 0 ? (
               <div className="p-12 text-center">
                 
                 <h3 className="text-xl font-semibold text-[#344054] mb-2">
@@ -622,7 +579,7 @@ const handlePageClick = (page) => {
                   </thead>
 
                   <tbody>
-                   {paginatedTransactions.map((transaction) => {
+                   {transactions.map((transaction) => {
                       const shortDate = formatShortDate(transaction.date);
 
                       return (

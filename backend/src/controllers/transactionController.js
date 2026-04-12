@@ -13,6 +13,7 @@ const getTransactions = asyncHandler(async (req, res) => {
     search,
     startDate,
     endDate,
+    month,
     page = 1,
     limit = 10,
   } = req.query;
@@ -39,11 +40,21 @@ const getTransactions = asyncHandler(async (req, res) => {
     };
   }
 
-  // Filter berdasarkan tanggal
-  if (startDate || endDate) {
+  // Filter berdasarkan month ("YYYY-MM")
+  if (month) {
+    const [yyyy, mm] = month.split('-');
+    const sDate = new Date(yyyy, mm - 1, 1);
+    const eDate = new Date(yyyy, mm, 0, 23, 59, 59, 999);
+    filter.date = { ...filter.date, $gte: sDate, $lte: eDate };
+  } else if (startDate || endDate) {
+    // Filter berdasarkan tanggal custom
     filter.date = {};
     if (startDate) filter.date.$gte = new Date(startDate);
-    if (endDate) filter.date.$lte = new Date(endDate);
+    if (endDate) {
+      const eDate = new Date(endDate);
+      eDate.setHours(23,59,59,999);
+      filter.date.$lte = eDate;
+    }
   }
 
   // 🔥 PAGINATION
@@ -57,11 +68,28 @@ const getTransactions = asyncHandler(async (req, res) => {
     .skip((pageNumber - 1) * pageSize)
     .limit(pageSize);
 
+  // Aggregation for totals of the FILTERED items
+  const totalsResult = await Transaction.aggregate([
+    { $match: filter },
+    {
+      $group: {
+        _id: null,
+        totalIncome: { $sum: { $cond: [{ $eq: ['$type', 'income'] }, '$amount', 0] } },
+        totalExpense: { $sum: { $cond: [{ $eq: ['$type', 'expense'] }, '$amount', 0] } }
+      }
+    }
+  ]);
+
+  const summaryIncome = totalsResult[0]?.totalIncome || 0;
+  const summaryExpense = totalsResult[0]?.totalExpense || 0;
+
   res.json({
     transactions,
     page: pageNumber,
     pages: Math.ceil(total / pageSize),
     total,
+    summaryIncome,
+    summaryExpense
   });
 });
 
@@ -183,23 +211,74 @@ const deleteTransaction = asyncHandler(async (req, res) => {
 // @access  Private
 const getSummary = asyncHandler(async (req, res) => {
   const { period = '6months' } = req.query;
-  const transactions = await Transaction.find({ user: req.user._id });
-
-  let totalIncome = 0;
-  let totalExpense = 0;
-  const categoryExpense = {};
-
+  const userId = req.user._id;
   const now = new Date();
+
+  // 1. Calculate All Time Balance & Current Month Totals
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const statsAggregation = await Transaction.aggregate([
+    { $match: { user: userId } },
+    {
+      $facet: {
+        allTime: [
+          {
+            $group: {
+              _id: null,
+              totalIncome: { $sum: { $cond: [{ $eq: ['$type', 'income'] }, '$amount', 0] } },
+              totalExpense: { $sum: { $cond: [{ $eq: ['$type', 'expense'] }, '$amount', 0] } },
+            },
+          },
+        ],
+        currentMonth: [
+          { $match: { date: { $gte: startOfMonth } } },
+          {
+            $group: {
+              _id: null,
+              totalIncome: { $sum: { $cond: [{ $eq: ['$type', 'income'] }, '$amount', 0] } },
+              totalExpense: { $sum: { $cond: [{ $eq: ['$type', 'expense'] }, '$amount', 0] } },
+            },
+          },
+        ],
+        categoryStats: [
+          { $match: { date: { $gte: startOfMonth }, type: 'expense' } },
+          {
+            $group: {
+              _id: '$category',
+              total: { $sum: '$amount' },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const stats = statsAggregation[0];
+  const allTime = stats.allTime[0] || { totalIncome: 0, totalExpense: 0 };
+  const currentMonth = stats.currentMonth[0] || { totalIncome: 0, totalExpense: 0 };
+
+  const balance = allTime.totalIncome - allTime.totalExpense;
+  const totalIncome = currentMonth.totalIncome;
+  const totalExpense = currentMonth.totalExpense;
+
+  const categoryExpense = {};
+  stats.categoryStats.forEach((cat) => {
+    categoryExpense[cat._id] = cat.total;
+  });
+
+  // 2. Chart Data Aggregation
   const aggregatedData = [];
+  let startDateChart;
   
-  // LOGIKA AGREGASI (PERIOD)
   if (period === 'week' || period === 'month') {
-    // HARIAN (Daily)
     const days = period === 'week' ? 7 : 30;
+    startDateChart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
+    startDateChart.setHours(0, 0, 0, 0); // Start of the day
+    
+    // Initialize empty labels
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
       const label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-      
       aggregatedData.push({
         label,
         income: 0,
@@ -210,26 +289,13 @@ const getSummary = asyncHandler(async (req, res) => {
       });
     }
 
-    transactions.forEach(t => {
-      const tDate = new Date(t.date);
-      const data = aggregatedData.find(ad => 
-        ad.year === tDate.getFullYear() && 
-        ad.monthNum === tDate.getMonth() && 
-        ad.dayNum === tDate.getDate()
-      );
-      if (data) {
-        if (t.type === 'income') data.income += t.amount;
-        else data.expense += t.amount;
-      }
-    });
-
   } else {
-    // BULANAN (Monthly)
     const months = period === '6months' ? 6 : 12;
+    startDateChart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+    
     for (let i = months - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const label = d.toLocaleString('id-ID', { month: 'short' }).toUpperCase();
-      
       aggregatedData.push({
         label,
         income: 0,
@@ -238,45 +304,43 @@ const getSummary = asyncHandler(async (req, res) => {
         monthNum: d.getMonth()
       });
     }
-
-    transactions.forEach(t => {
-      const tDate = new Date(t.date);
-      const data = aggregatedData.find(ad => 
-        ad.year === tDate.getFullYear() && ad.monthNum === tDate.getMonth()
-      );
-      if (data) {
-        if (t.type === 'income') data.income += t.amount;
-        else data.expense += t.amount;
-      }
-    });
   }
 
-  // TOTAL & CATEGORY (Filtered to current month for dashboard display, all-time for balance)
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  let absoluteIncome = 0;
-  let absoluteExpense = 0;
-
-  transactions.forEach((t) => {
-    const tDate = new Date(t.date);
-    const isCurrentMonth = tDate >= startOfMonth;
-
-    if (t.type === 'income') {
-      absoluteIncome += t.amount;
-      if (isCurrentMonth) totalIncome += t.amount;
-    } else {
-      absoluteExpense += t.amount;
-      if (isCurrentMonth) {
-        totalExpense += t.amount;
-        if (categoryExpense[t.category]) {
-          categoryExpense[t.category] += t.amount;
-        } else {
-          categoryExpense[t.category] = t.amount;
-        }
+  // Fetch actual data for chart using aggregation
+  const chartAggregation = await Transaction.aggregate([
+    { $match: { user: userId, date: { $gte: startDateChart } } },
+    {
+      $project: {
+        amount: 1,
+        type: 1,
+        date: 1,
+        // Convert to local timezone concepts roughly. Better handled in application code below.
       }
     }
-  });
+  ]);
 
-  const balance = absoluteIncome - absoluteExpense;
+  // Map to chart
+  chartAggregation.forEach(t => {
+    const tDate = new Date(t.date);
+    let data;
+    if (period === 'week' || period === 'month') {
+      data = aggregatedData.find(ad => 
+        ad.year === tDate.getFullYear() && 
+        ad.monthNum === tDate.getMonth() && 
+        ad.dayNum === tDate.getDate()
+      );
+    } else {
+      data = aggregatedData.find(ad => 
+        ad.year === tDate.getFullYear() && 
+        ad.monthNum === tDate.getMonth()
+      );
+    }
+
+    if (data) {
+      if (t.type === 'income') data.income += t.amount;
+      else data.expense += t.amount;
+    }
+  });
 
   res.json({
     totalIncome,

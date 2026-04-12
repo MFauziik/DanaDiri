@@ -26,11 +26,7 @@ export const getProfile = async () => {
 };
 
 export const updateProfile = async (formData) => {
-  const response = await api.put('/auth/profile', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await api.put('/auth/profile', formData);
   return response.data;
 };
 
