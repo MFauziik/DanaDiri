@@ -39,9 +39,15 @@ const startServer = async () => {
     app.use('/api/recurring', require('./src/routes/recurringRoutes'));
     app.use('/api/insights', require('./src/routes/insightRoutes'));
 
+    // Default Health Check (Mencegah Railway menganggap server mati)
+    app.get('/', (req, res) => {
+      res.status(200).send('DanaDiri API is running!');
+    });
+
     const PORT = process.env.PORT || 5000;
 
-    app.listen(PORT, () => {
+    // Bind ke 0.0.0.0 sangat penting untuk Docker/Railway deployment
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server berjalan di port ${PORT}`);
     });
   } catch (error) {
