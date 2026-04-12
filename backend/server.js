@@ -4,6 +4,14 @@ const cors = require('cors');
 const connectDB = require('./src/config/database');
 const { startRecurringJob } = require('./src/utils/recurringJob');
 
+process.on('uncaughtException', (err) => {
+  console.error('🔥 Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const startServer = async () => {
   try {
     await connectDB();
@@ -12,6 +20,11 @@ const startServer = async () => {
     startRecurringJob();
 
     const app = express();
+
+    // Default Health Check (bypasses CORS)
+    app.get('/', (req, res) => {
+      res.status(200).send('DanaDiri API is running!');
+    });
 
     const corsOptions = {
       origin: [
@@ -38,11 +51,6 @@ const startServer = async () => {
     app.use('/api/budgets', require('./src/routes/budgetRoutes'));
     app.use('/api/recurring', require('./src/routes/recurringRoutes'));
     app.use('/api/insights', require('./src/routes/insightRoutes'));
-
-    // Default Health Check (Mencegah Railway menganggap server mati)
-    app.get('/', (req, res) => {
-      res.status(200).send('DanaDiri API is running!');
-    });
 
     const PORT = process.env.PORT || 5000;
 
