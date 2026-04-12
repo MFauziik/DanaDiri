@@ -7,9 +7,16 @@ const sendEmail = async (options) => {
     throw new Error('Konfigurasi email (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS) belum disetel.');
   }
 
+  // Use IPv4 address directly untuk bypass IPv6 DNS resolution
+  const smtpHost = process.env.EMAIL_HOST === 'smtp.gmail.com' 
+    ? '142.250.145.108' // Gmail SMTP IPv4 address
+    : process.env.EMAIL_HOST;
+
+  console.log(`Connecting to SMTP host: ${smtpHost} (${process.env.EMAIL_HOST})`);
+
   // Buat transporter dengan konfigurasi yang aman untuk Railway
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
+    host: smtpHost,
     port: parseInt(process.env.EMAIL_PORT),
     secure: process.env.EMAIL_SECURE === 'true', // true untuk 465, false untuk port lain
     auth: {
@@ -30,7 +37,12 @@ const sendEmail = async (options) => {
     // Force IPv4 untuk menghindari ENETUNREACH error
     family: 4, // Force IPv4 (4 = IPv4, 6 = IPv6, 0 = both)
     // Additional connection options untuk Railway
-    name: 'danadiri.railway.app' // Identify client to SMTP server
+    name: 'danadiri.railway.app', // Identify client to SMTP server
+    // Disable DNS lookup untuk menghindari IPv6
+    dns: {
+      ipv4: true,
+      ipv6: false
+    }
   });
 
   const mailOptions = {
