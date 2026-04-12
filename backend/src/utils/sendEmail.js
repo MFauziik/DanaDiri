@@ -26,7 +26,11 @@ const sendEmail = async (options) => {
     maxConnections: 3,        // Kurangi untuk Railway
     maxMessages: 50,          // Kurangi untuk stability
     pool: true,               // Enable connection pooling
-    debug: process.env.NODE_ENV === 'development' // Debug mode untuk development
+    debug: process.env.NODE_ENV === 'development', // Debug mode untuk development
+    // Force IPv4 untuk menghindari ENETUNREACH error
+    family: 4, // Force IPv4 (4 = IPv4, 6 = IPv6, 0 = both)
+    // Additional connection options untuk Railway
+    name: 'danadiri.railway.app' // Identify client to SMTP server
   });
 
   const mailOptions = {
