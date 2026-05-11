@@ -53,6 +53,10 @@ const startServer = async () => {
 
     const { notFound, errorHandler } = require('./src/middleware/errorMiddleware');
 
+    // Debug rute — pastikan rute login terdaftar eksplisit
+    const { loginUser } = require('./src/controllers/authController');
+    app.post('/api/auth/login', loginUser);
+
     // Routes
     app.use('/api/auth', require('./src/routes/authRoutes'));
     app.use('/api/goals', require('./src/routes/goalRoutes'));

@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const Recurring = require('../models/RecurringTransaction');
+const { processSpecificRecurring } = require('../utils/recurringJob');
 
 // GET
 const getRecurring = asyncHandler(async (req, res) => {
@@ -18,11 +19,14 @@ const createRecurring = asyncHandler(async (req, res) => {
   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({ message: 'Database sedang tidak tersedia' });
   }
-  
+
   const recurring = await Recurring.create({
     ...req.body,
     user: req.user._id,
   });
+
+  // Validasi langsung setelah create: jika dayOfMonth == hari ini, buat transaksi
+  setImmediate(() => processSpecificRecurring(recurring._id));
 
   res.status(201).json(recurring);
 });
@@ -51,6 +55,9 @@ const updateRecurring = asyncHandler(async (req, res) => {
     req.body,
     { new: true }
   );
+
+  // Validasi langsung setelah update: jika dayOfMonth (baru) == hari ini, buat transaksi
+  setImmediate(() => processSpecificRecurring(updatedRecurring._id));
 
   res.json(updatedRecurring);
 });
