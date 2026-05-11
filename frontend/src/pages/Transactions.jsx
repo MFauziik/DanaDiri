@@ -82,7 +82,7 @@ const Transactions = ({ user, setUser }) => {
       if (selectedCategory) params.category = selectedCategory;
       if (selectedType) params.type = selectedType;
 
-      const { data } = await api.get('/transactions', { params });
+      const { data } = await api.get('transactions', { params });
 
       setTransactions(Array.isArray(data.transactions) ? data.transactions : []);
       setTotalPages(data.pages || 1);
@@ -101,7 +101,7 @@ const Transactions = ({ user, setUser }) => {
 
   const handleAddTransaction = async (formData) => {
     try {
-      const { data } = await api.post('/transactions', formData);
+      const { data } = await api.post('transactions', formData);
       
       if (data.success === false) {
         alert(data.message);
@@ -119,7 +119,7 @@ const Transactions = ({ user, setUser }) => {
 
   const handleUpdateTransaction = async (formData) => {
     try {
-      const { data } = await api.put(`/transactions/${editingTransaction._id}`, formData);
+      const { data } = await api.put(`transactions/${editingTransaction._id}`, formData);
       
       if (data.success === false) {
         alert(data.message);
@@ -138,7 +138,7 @@ const Transactions = ({ user, setUser }) => {
   const handleDeleteTransaction = async (id) => {
     if (window.confirm('Yakin ingin menghapus transaksi ini?')) {
       try {
-        await api.delete(`/transactions/${id}`);
+        await api.delete(`transactions/${id}`);
         await fetchTransactions();
         await fetchRecurrings();
       } catch (error) {

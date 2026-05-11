@@ -91,10 +91,10 @@ const Dashboard = ({ user, setUser }) => {
   const fetchData = async (period = '6months') => {
     try {
       const [summaryRes, transactionsRes, goalsRes, insightRes] = await Promise.all([
-        api.get(`/transactions/summary?period=${period}`),
-        api.get('/transactions?limit=5'),
-        api.get('/goals/summary'),
-        api.get('/insights'),
+        api.get(`transactions/summary?period=${period}`),
+        api.get('transactions?limit=5'),
+        api.get('goals/summary'),
+        api.get('insights'),
       ]);
 
       setSummary({

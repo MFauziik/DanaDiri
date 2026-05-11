@@ -21,6 +21,12 @@ const startServer = async () => {
 
     const app = express();
 
+    // Logging middleware untuk debug Railway
+    app.use((req, res, next) => {
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+      next();
+    });
+
     // Default Health Check (bypasses CORS)
     app.get('/', (req, res) => {
       res.status(200).send('DanaDiri API is running!');
@@ -29,9 +35,10 @@ const startServer = async () => {
     const corsOptions = {
       origin: [
         'https://danadiri.vercel.app',
+        'https://danadiri-production-02e8.up.railway.app',
         'http://localhost:5173',
-        'http://localhost:5174',
-        'http://127.0.0.1:5173'
+        'http://127.0.0.1:5173',
+        /\.vercel\.app$/ // Mengizinkan semua subdomain Vercel
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -39,7 +46,7 @@ const startServer = async () => {
     };
 
     app.use(cors(corsOptions));
-    // Handle preflight (OPTIONS) requests explicitly for all routes
+    // Handle preflight (OPTIONS) requests explicitly
     app.options('*', cors(corsOptions));
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
