@@ -25,8 +25,8 @@ const createRecurring = asyncHandler(async (req, res) => {
     user: req.user._id,
   });
 
-  // Validasi langsung setelah create: jika dayOfMonth == hari ini, buat transaksi
-  setImmediate(() => processSpecificRecurring(recurring._id));
+  // ── Trigger 1 (create): cek langsung apakah hari ini adalah jadwalnya ──
+  setImmediate(() => processSpecificRecurring(recurring._id, false));
 
   res.status(201).json(recurring);
 });
@@ -56,8 +56,9 @@ const updateRecurring = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  // Validasi langsung setelah update: jika dayOfMonth (baru) == hari ini, buat transaksi
-  setImmediate(() => processSpecificRecurring(updatedRecurring._id));
+  // ── Trigger 1 (update): forceCheck=true agar perubahan dayOfMonth
+  //    ke hari ini tetap diproses meski lastRun sudah ada hari ini ──
+  setImmediate(() => processSpecificRecurring(updatedRecurring._id, true));
 
   res.json(updatedRecurring);
 });

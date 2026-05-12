@@ -94,9 +94,12 @@ const processRecurringTransactions = async (retryCount = 0) => {
 
 /**
  * Validasi & proses satu recurring transaksi spesifik setelah create/update.
- * Jika dayOfMonth == hari ini dan belum dijalankan hari ini, langsung buat transaksi.
+ *
+ * @param {string} recurringId  - ID dari recurring yang akan dicek
+ * @param {boolean} forceCheck  - Jika true (update), abaikan lastRun agar
+ *                                perubahan dayOfMonth langsung diproses
  */
-const processSpecificRecurring = async (recurringId) => {
+const processSpecificRecurring = async (recurringId, forceCheck = false) => {
   try {
     if (!isDbConnected()) {
       console.log('⚠️ [Recurring Job] DB not connected, skipping specific check.');
@@ -125,9 +128,10 @@ const processSpecificRecurring = async (recurringId) => {
     const startOfToday = new Date(currentYear, currentMonth - 1, currentDay);
     startOfToday.setHours(0, 0, 0, 0);
 
-    // Cek apakah sudah dijalankan hari ini
-    if (recurring.lastRun && recurring.lastRun >= startOfToday) {
-      console.log(`ℹ️ [Recurring Job] Recurring ${recurringId} already processed today.`);
+    // Cek apakah sudah dijalankan hari ini —
+    // skip jika forceCheck=true (update: dayOfMonth baru mungkin sama dengan hari ini)
+    if (!forceCheck && recurring.lastRun && recurring.lastRun >= startOfToday) {
+      console.log(`ℹ️ [Recurring Job] Recurring ${recurringId} already processed today. (Trigger: add/update)`);
       return;
     }
 
@@ -148,33 +152,42 @@ const processSpecificRecurring = async (recurringId) => {
     recurring.lastRun = today;
     await recurring.save();
 
-    console.log(`✅ [Recurring Job] Immediate processing for recurring ${recurringId} - Rp ${recurring.amount}`);
+    const trigger = forceCheck ? 'update' : 'create';
+    console.log(`✅ [Recurring Job] Processed (Trigger: ${trigger}) recurring ${recurringId} - Rp ${recurring.amount}`);
   } catch (error) {
     console.error(`❌ [Recurring Job] Error in processSpecificRecurring(${recurringId}):`, error.message);
   }
 };
 
-// Start scheduler
+// ─────────────────────────────────────────────────────────────
+// Start all schedulers
+// Trigger 1 : setiap tambah/update recurring  → processSpecificRecurring(id, forceCheck)
+// Trigger 2 : setiap 1 jam                    → processRecurringTransactions()
+// Trigger 3 : jam 00:00 (pergantian hari)     → processRecurringTransactions()
+// ─────────────────────────────────────────────────────────────
 const startRecurringJob = () => {
-  // 1. Setiap jam (menit ke-1) — cek semua recurring yang hari ini
-  cron.schedule('1 * * * *', async () => {
-    console.log('⏰ [Recurring Job] Hourly check...');
+  // ── Trigger 2: Setiap jam tepat di menit ke-0 ──
+  cron.schedule('0 * * * *', async () => {
+    console.log('⏰ [Recurring Job] [Trigger 2] Hourly check...');
     await processRecurringTransactions();
   });
 
-  // 2. Tepat jam 12 malam (00:00) — validasi awal hari
+  // ── Trigger 3: Tepat jam 00:00 setiap hari (pergantian hari) ──
   cron.schedule('0 0 * * *', async () => {
-    console.log('🌙 [Recurring Job] Midnight check (00:00)...');
+    console.log('🌙 [Recurring Job] [Trigger 3] Midnight check (00:00)...');
     await processRecurringTransactions();
   });
 
-  // 3. Startup check (opsional, berguna untuk dev & cold start)
+  // Startup check — berguna saat server restart / cold start
   setTimeout(async () => {
-    console.log('⏰ [Recurring Job] Startup check...');
+    console.log('🟢 [Recurring Job] [Startup] Initial check on server start...');
     await processRecurringTransactions();
   }, 5000);
 
-  console.log('🚀 [Recurring Job] Scheduler started (Hourly + Midnight + Startup).');
+  console.log('🚀 [Recurring Job] Scheduler started.');
+  console.log('   • Trigger 1 : setiap tambah/update recurring (via controller)');
+  console.log('   • Trigger 2 : setiap jam (cron: 0 * * * *)');
+  console.log('   • Trigger 3 : jam 00:00 setiap hari (cron: 0 0 * * *)');
 };
 
 module.exports = { startRecurringJob, processRecurringTransactions, processSpecificRecurring };
