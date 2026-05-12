@@ -33,6 +33,7 @@ const Profile = ({ user, setUser }) => {
   const [profilePic, setProfilePic] = useState(null);
   const [preview, setPreview] = useState(getProfileUrl(user?.profilePicture));
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const fileInputRef = useRef(null);
@@ -45,6 +46,10 @@ const Profile = ({ user, setUser }) => {
       if (user.profilePicture) {
         setPreview(getProfileUrl(user.profilePicture));
       }
+      // Simulate initial loading completion
+      setTimeout(() => {
+        setInitialLoading(false);
+      }, 500);
     }
   }, [user]);
 
@@ -121,6 +126,17 @@ const Profile = ({ user, setUser }) => {
     setProfilePic(null);
     setMessage({ type: '', text: '' });
   };
+
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f4f6fb]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FC] flex flex-col md:flex-row">

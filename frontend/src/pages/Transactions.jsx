@@ -258,44 +258,53 @@ const handlePrev = () => {
 };
 
 const handlePageClick = (page) => {
-  setCurrentPage(page);
+setCurrentPage(page);
 };
-  if (error) {
-    
-    return (
-      <div className="min-h-screen bg-[#f7f8fc] flex flex-col md:flex-row">
-        <Sidebar user={user} setUser={setUser} />
-        <main className="flex-1 p-6 md:p-8">
-          <div className="bg-white border border-red-100 rounded-3xl p-8 text-center shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-3xl">
-              ⚠️
-            </div>
-            <h3 className="text-xl font-bold text-red-700 mb-2">
-              Gagal Memuat Data
-            </h3>
-            <p className="text-red-500 mb-5">{error}</p>
-            <button
-              onClick={fetchAllData}
-              className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold transition"
-            >
-              Coba Lagi
-            </button>
-          </div>
-        </main>
+
+if (loading && transactions.length === 0) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#f4f6fb]">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Memuat data...</p>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+if (error) {
+  return (
+    <div className="min-h-screen bg-[#f7f8fc] flex flex-col md:flex-row">
+      <Sidebar user={user} setUser={setUser} />
+      <main className="flex-1 p-6 md:p-8">
+        <div className="bg-white border border-red-100 rounded-3xl p-8 text-center shadow-sm">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-3xl">
+            ⚠️
+          </div>
+          <h3 className="text-xl font-bold text-red-700 mb-2">
+            Gagal Memuat Data
+          </h3>
+          <p className="text-red-500 mb-5">{error}</p>
+          <button
+            onClick={() => fetchTransactions()}
+            className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold transition"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-[#f7f8fc] flex flex-col md:flex-row">
       <Sidebar user={user} setUser={setUser} />
-
-      <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* HEADER */}
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 mb-8">
+      <main className="flex-1 p-6 md:p-8">
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-[#1f2a44] leading-tight">
+              <h1 className="text-2xl font-bold text-[#1f2a44]">
                 Riwayat Transaksi
               </h1>
               <p className="text-[#8b95a7] text-sm mt-1">
