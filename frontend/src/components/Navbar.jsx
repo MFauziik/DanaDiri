@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const Navbar = () => {
+const Navbar = ({ user }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -61,18 +61,29 @@ const Navbar = () => {
 
         {/* Action Buttons */}
         <div className="hidden md:flex items-center space-x-3">
-          <Link
-            to="/login"
-            className="text-gray-700 font-bold hover:text-primary transition-all px-5 py-2.5 rounded-xl hover:bg-primary/10 active:scale-95"
-          >
-            Masuk
-          </Link>
-          <Link
-            to="/register"
-            className="bg-primary hover:bg-secondary text-white px-7 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-[0_4px_20px_rgba(45,63,191,0.4)] hover:shadow-[0_8px_30px_rgba(124,77,255,0.6)] hover:-translate-y-1 active:scale-95"
-          >
-            Mulai Sekarang
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="bg-primary hover:bg-secondary text-white px-7 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-[0_4px_20px_rgba(45,63,191,0.4)] hover:shadow-[0_8px_30px_rgba(124,77,255,0.6)] hover:-translate-y-1 active:scale-95"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-gray-700 font-bold hover:text-primary transition-all px-5 py-2.5 rounded-xl hover:bg-primary/10 active:scale-95"
+              >
+                Masuk
+              </Link>
+              <Link
+                to="/register"
+                className="bg-primary hover:bg-secondary text-white px-7 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-[0_4px_20px_rgba(45,63,191,0.4)] hover:shadow-[0_8px_30px_rgba(124,77,255,0.6)] hover:-translate-y-1 active:scale-95"
+              >
+                Mulai Sekarang
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -115,8 +126,14 @@ const Navbar = () => {
           </a>
           
           <div className="pt-8 flex flex-col gap-4">
-            <Link to="/login" className="text-center text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100 font-bold py-4 rounded-xl text-lg transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Masuk</Link>
-            <Link to="/register" className="text-center bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-[0_8px_30px_rgb(45,63,191,0.3)] hover:bg-secondary transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Mulai Sekarang</Link>
+            {user ? (
+              <Link to="/dashboard" className="text-center bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-[0_8px_30px_rgb(45,63,191,0.3)] hover:bg-secondary transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-center text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100 font-bold py-4 rounded-xl text-lg transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Masuk</Link>
+                <Link to="/register" className="text-center bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-[0_8px_30px_rgb(45,63,191,0.3)] hover:bg-secondary transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Mulai Sekarang</Link>
+              </>
+            )}
           </div>
         </div>
       </div>

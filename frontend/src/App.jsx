@@ -48,7 +48,7 @@ function App() {
       <Routes>
         {/* Landing Page - Halaman Utama */}
         <Route path="/" element={<Landing user={user} />} />
-        
+
         {/* Auth Pages */}
         <Route
           path="/login"
@@ -58,7 +58,7 @@ function App() {
           path="/register"
           element={user ? <Navigate to="/dashboard" /> : <Register setUser={setUser} />}
         />
-        
+
         {/* Protected Pages - Hanya bisa diakses jika sudah login */}
         <Route
           path="/dashboard"
@@ -76,7 +76,7 @@ function App() {
           path="/profile"
           element={user ? <Profile user={user} setUser={setUser} /> : <Navigate to="/login" />}
         />
-        
+
         {/* Redirect ke landing page jika path tidak ditemukan */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

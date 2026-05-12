@@ -2,10 +2,10 @@ import Navbar from "../components/Navbar";
 import { ArrowRight, TrendingDown, RefreshCcw, ShieldAlert, Zap, LayoutDashboard, FileText, Target, CheckCircle2, Lightbulb, ArrowLeftRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function Landing() {
+export default function Landing({ user }) {
   return (
     <div className="bg-neutral min-h-screen font-body text-gray-800 overflow-x-hidden">
-      <Navbar />
+      <Navbar user={user} />
 
       {/* 2. HERO SECTION */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 lg:px-12 overflow-hidden">

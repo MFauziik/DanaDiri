@@ -38,6 +38,7 @@ const Transactions = ({ user, setUser }) => {
   const [summaryIncome, setSummaryIncome] = useState(0);
   const [summaryExpense, setSummaryExpense] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
@@ -47,13 +48,35 @@ const Transactions = ({ user, setUser }) => {
 
   // FILTER UI
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
+  // Optimized debounce effect with cleanup
+  useEffect(() => {
+    // Show search loading when user starts typing
+    if (searchTerm !== debouncedSearch) {
+      setSearchLoading(true);
+    }
+    
+    const timer = setTimeout(() => {
+      // Only update if the search term has actually changed
+      if (searchTerm !== debouncedSearch) {
+        setDebouncedSearch(searchTerm);
+        setSearchLoading(false);
+      }
+    }, 700); // Increased to 700ms for better performance
+    
+    return () => {
+      clearTimeout(timer);
+      setSearchLoading(false);
+    };
+  }, [searchTerm, debouncedSearch]);
+
   useEffect(() => {
     fetchTransactions();
-  }, [currentPage, searchTerm, selectedMonth, selectedCategory, selectedType]);
+  }, [currentPage, debouncedSearch, selectedMonth, selectedCategory, selectedType]);
 
   useEffect(() => {
     fetchRecurrings();
@@ -77,7 +100,7 @@ const Transactions = ({ user, setUser }) => {
         page: currentPage,
         limit: itemsPerPage
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (selectedMonth) params.month = selectedMonth;
       if (selectedCategory) params.category = selectedCategory;
       if (selectedType) params.type = selectedType;
@@ -221,16 +244,7 @@ const Transactions = ({ user, setUser }) => {
 
     
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f8fc]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">Memuat data...</p>
-        </div>
-      </div>
-    );
-  }
+
 const handleNext = () => {
   if (currentPage < totalPages) {
     setCurrentPage(currentPage + 1);
@@ -464,9 +478,13 @@ const handlePageClick = (page) => {
                 <div className="flex flex-col md:flex-row gap-3 w-full">
                   <div className="relative w-full md:max-w-[260px]">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#98a2b3] text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#98a2b3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      {searchLoading ? (
+                        <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#98a2b3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M16 10a6 6 0 11-12 0 6 6 0 0112 0z" />
 </svg>
+                      )}
                     </span>
                     <input
                       type="text"
@@ -539,7 +557,12 @@ const handlePageClick = (page) => {
             </div>
 
             {/* TABLE */}
-            {transactions.length === 0 ? (
+            {loading ? (
+              <div className="p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+                <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p className="text-[#8b95a7] font-medium">Memuat data...</p>
+              </div>
+            ) : transactions.length === 0 ? (
               <div className="p-12 text-center">
                 
                 <h3 className="text-xl font-semibold text-[#344054] mb-2">
