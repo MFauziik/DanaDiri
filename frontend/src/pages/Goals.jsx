@@ -214,17 +214,20 @@ const Goals = ({ user, setUser }) => {
     return diffDays <= 0 ? '0 Hari' : `${diffDays} Hari`;
   };
 
-  const getRecommendedMonthly = (goal) => {
+  const getRecommendedDaily = (goal) => {
     const remaining = goal.targetAmount - goal.currentAmount;
+    if (remaining <= 0) return 0;
+
     const now = new Date();
     const target = new Date(goal.deadline);
+    const diffTime = target - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const months =
-      (target.getFullYear() - now.getFullYear()) * 12 +
-      (target.getMonth() - now.getMonth());
+    if (diffDays <= 0) return remaining;
 
-    if (months <= 0) return remaining > 0 ? remaining : 0;
-    return Math.ceil(remaining / months);
+    const daily = remaining / diffDays;
+    // Membulatkan ke atas ke kelipatan 1000 (Rupiah)
+    return Math.ceil(daily / 1000) * 1000;
   };
 
   if (loading) {
@@ -398,16 +401,7 @@ const Goals = ({ user, setUser }) => {
                   </div>
 
                   {/* Info */}
-                  <div className="grid grid-cols-3 gap-3 mb-5">
-                    <div className="bg-[#f5f7fb] rounded-[14px] py-3 px-2 text-center">
-                      <p className="text-[9px] font-extrabold tracking-wide text-[#7b879f] uppercase">
-                        Setoran
-                      </p>
-                      <p className="text-xs sm:text-sm font-bold text-[#1f2937] mt-1">
-                        {formatRupiah(getRecommendedMonthly(goal))}
-                      </p>
-                    </div>
-
+                  <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="bg-[#f5f7fb] rounded-[14px] py-3 px-2 text-center">
                       <p className="text-[9px] font-extrabold tracking-wide text-[#7b879f] uppercase">
                         Target
@@ -425,6 +419,16 @@ const Goals = ({ user, setUser }) => {
                         {getDaysLeft(goal.deadline)}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Saran Nabung */}
+                  <div className="bg-[#eff6ff] rounded-[12px] py-2.5 px-3 mb-5 border border-[#bfdbfe] flex justify-center items-center text-center">
+                    <p className="text-xs font-bold text-[#1d4ed8]">
+                      💡 {formatRupiah(getRecommendedDaily(goal))}{' '}
+                      <span className="font-medium text-[#2563eb]">
+                        (saran nabung/hari)
+                      </span>
+                    </p>
                   </div>
 
                   {/* Button */}
@@ -535,7 +539,7 @@ const Goals = ({ user, setUser }) => {
                 </p>
                 <p className="text-sm text-[#5f6b82] leading-relaxed">
                   Sistem akan menghitung otomatis berapa jumlah yang harus
-                  disisihkan setiap bulannya berdasarkan tanggal target yang Anda
+                  disisihkan setiap harinya berdasarkan tanggal target yang Anda
                   tentukan.
                 </p>
               </div>

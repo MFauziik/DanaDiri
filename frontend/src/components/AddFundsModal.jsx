@@ -6,6 +6,7 @@ const AddFundsModal = ({ goal, onClose, onSubmit }) => {
   const [amount, setAmount] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAmountChange = (e) => {
     const rawValue = e.target.value;
@@ -14,7 +15,7 @@ const AddFundsModal = ({ goal, onClose, onSubmit }) => {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const numAmount = amount;
     if (!amount || numAmount <= 0) {
@@ -26,7 +27,12 @@ const AddFundsModal = ({ goal, onClose, onSubmit }) => {
         return;
       }
     }
-    onSubmit(numAmount);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(numAmount);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const remaining = goal.targetAmount - goal.currentAmount;
@@ -119,10 +125,11 @@ const AddFundsModal = ({ goal, onClose, onSubmit }) => {
               </button>
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 transition active:scale-[0.98]"
+                disabled={isSubmitting}
+                className={`flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 transition active:scale-[0.98] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                <Plus size={18} strokeWidth={3} />
-                Tambah Dana
+                {!isSubmitting && <Plus size={18} strokeWidth={3} />}
+                {isSubmitting ? 'Memproses...' : 'Tambah Dana'}
               </button>
             </div>
           </form>

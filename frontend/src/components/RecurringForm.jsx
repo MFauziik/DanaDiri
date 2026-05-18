@@ -1,13 +1,49 @@
 import { useState } from 'react';
-import { CATEGORIES, TRANSACTION_TYPES, DAYS } from '../utils/constants';
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, DAYS } from '../utils/constants';
 import { formatNumber, parseRupiah } from '../utils/currency';
-import { ChevronDown, Info } from 'lucide-react';
+import { 
+  ChevronDown, Info, Wallet, Briefcase, Home, 
+  Banknote, Coffee, Zap, Droplets, Phone, Building, PiggyBank, 
+  Car, ShoppingBag, Gamepad2, HeartPulse, Receipt, MoreHorizontal,
+  CupSoda, Wifi, HandCoins, Handshake, Gift
+} from 'lucide-react';
+
+const categoryIcons = {
+  'Penghasilan': Wallet,
+  'Investasi': Briefcase,
+  'Jual Tanah': Home,
+  'Kos-kosan': Home,
+  'Tunjangan': Banknote,
+  'Gaji': Wallet,
+  'Uang Saku': HandCoins,
+  'Bisnis': Handshake,
+  'Bonus': Banknote,
+  'Hadiah': Gift,
+  'Pencairan Dana': Banknote,
+  'Jajan': Coffee,
+  'Minuman': CupSoda,
+  'Tabungan': PiggyBank,
+  'Tagihan Listrik': Zap,
+  'Tagihan Air': Droplets,
+  'Internet': Wifi,
+  'Tagihan Telepon': Phone,
+  'SPP': Building,
+  'Makanan': Coffee,
+  'Transportasi': Car,
+  'Belanja': ShoppingBag,
+  'Hiburan': Gamepad2,
+  'Kesehatan': HeartPulse,
+  'Tagihan': Receipt,
+  'Lainnya': MoreHorizontal,
+};
 
 const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
+  const [activeTab, setActiveTab] = useState(initialData.type || 'expense');
+  
   const [formData, setFormData] = useState({
     amount: initialData.amount || '',
     type: initialData.type || 'expense',
-    category: initialData.category || CATEGORIES[0],
+    category: initialData.category || EXPENSE_CATEGORIES[0],
     description: initialData.description || '',
     dayOfMonth: initialData.dayOfMonth || '1',
   });
@@ -15,6 +51,17 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [displayAmount, setDisplayAmount] = useState(
     initialData.amount ? formatNumber(initialData.amount) : ''
   );
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleTabChange = (type) => {
+    setActiveTab(type);
+    setFormData((prev) => ({ 
+      ...prev, 
+      type,
+      category: type === 'expense' ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,61 +73,76 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
     setDisplayAmount(formatNumber(parseRupiah(rawValue)));
     setFormData((prev) => ({
       ...prev,
-      amount: parseRupiah(rawValue),
+      amount: parseRupiah(rawValue)
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
       alert('Masukkan jumlah yang valid');
       return;
     }
-    onSubmit({
-      ...formData,
-      amount: amount,
-      dayOfMonth: parseInt(formData.dayOfMonth),
-    });
+    
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        ...formData,
+        amount: amount,
+        dayOfMonth: parseInt(formData.dayOfMonth),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const labelClass = "block text-xs font-extrabold text-[#9ca3af] tracking-widest uppercase mb-2.5 px-1";
-  const inputClass = "w-full h-12 px-4 bg-[#f8faff] border border-[#f0f3f9] rounded-xl text-[#1f2937] font-medium outline-none focus:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-50/50 transition-all placeholder:text-gray-300 appearance-none";
+  const inputClass = "w-full h-14 px-5 bg-[#f8faff] border border-[#f0f3f9] rounded-2xl text-[#1f2937] font-medium outline-none focus:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-50/50 transition-all placeholder:text-gray-300";
+  const labelClass = "block text-xs font-extrabold text-[#9ca3af] tracking-widest uppercase mb-3 px-1";
+
+  const currentCategories = activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className={labelClass}>Jumlah (RP)</label>
-        <input
-          type="text"
-          name="amount"
-          value={displayAmount}
-          onChange={handleAmountChange}
-          className={inputClass}
-          placeholder="Masukkan jumlah"
-          required
-        />
+      {/* Type Toggle */}
+      <div className="p-1.5 bg-gray-100/80 rounded-2xl flex relative h-14 border border-gray-200/50 shadow-inner">
+        <div 
+          className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.1)] transition-all duration-300 ease-out z-0"
+          style={{ left: activeTab === 'expense' ? '6px' : 'calc(50%)' }}
+        ></div>
+        <button
+          type="button"
+          onClick={() => handleTabChange('expense')}
+          className={`flex-1 flex items-center justify-center text-[13px] font-extrabold z-10 transition-colors duration-300 ${activeTab === 'expense' ? 'text-red-500' : 'text-gray-400'}`}
+        >
+          Pengeluaran
+        </button>
+        <button
+          type="button"
+          onClick={() => handleTabChange('income')}
+          className={`flex-1 flex items-center justify-center text-[13px] font-extrabold z-10 transition-colors duration-300 ${activeTab === 'income' ? 'text-emerald-500' : 'text-gray-400'}`}
+        >
+          Pemasukan
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Amount and Day */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={labelClass}>Tipe</label>
+          <label className={labelClass}>Jumlah (RP)</label>
           <div className="relative">
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className={inputClass}
-            >
-              {TRANSACTION_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+               <input
+                  type="text"
+                  value={displayAmount}
+                  onChange={handleAmountChange}
+                  placeholder="Rp 0"
+                  className={`${inputClass} !text-xl !font-black text-gray-800 ${displayAmount ? 'pl-14' : ''}`}
+                  required
+                />
+                {displayAmount && <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-gray-500 text-lg">Rp</span>}
           </div>
         </div>
+
         <div>
           <label className={labelClass}>Tanggal (Per Bulan)</label>
           <div className="relative">
@@ -88,53 +150,60 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
               name="dayOfMonth"
               value={formData.dayOfMonth}
               onChange={handleChange}
-              className={inputClass}
+              className={`${inputClass} appearance-none pr-12 text-sm font-bold text-gray-600`}
             >
               {DAYS.map((day) => (
                 <option key={day.value} value={day.value}>
-                  Tanggal {day.label}
+                  Setiap Tanggal {day.label}
                 </option>
               ))}
             </select>
-            <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <ChevronDown size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
-          <p className="text-xs text-gray-400 mt-1.5 ml-1">
-            Setiap tanggal berapa transaksi ini dibuat?
-          </p>
         </div>
       </div>
 
+      {/* Category Grid Selection */}
       <div>
-        <label className={labelClass}>Kategori</label>
-        <div className="relative">
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className={inputClass}
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <label className={labelClass}>Pilih Kategori</label>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-52 overflow-y-auto scrollbar-hide p-1 pb-4">
+          {currentCategories.map((cat) => {
+            const Icon = categoryIcons[cat] || MoreHorizontal;
+            const isSelected = formData.category === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setFormData({ ...formData, category: cat })}
+                className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-[18px] transition-all duration-200 border-2
+                  ${isSelected 
+                    ? (activeTab === 'expense' ? 'bg-red-50/50 border-red-300 shadow-sm' : 'bg-emerald-50/50 border-emerald-300 shadow-sm') 
+                    : 'bg-[#f8faff] border-transparent hover:bg-gray-100'}
+                `}
+              >
+                <div className={`p-2 rounded-xl transition-colors ${isSelected ? (activeTab === 'expense' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600') : 'bg-white text-gray-400 shadow-sm'}`}>
+                   <Icon size={22} className="stroke-[2.5]" />
+                </div>
+                <span className={`text-[10px] font-bold text-center leading-tight ${isSelected ? (activeTab === 'expense' ? 'text-red-700' : 'text-emerald-700') : 'text-gray-500'}`}>{cat}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
+      {/* Description Input */}
       <div>
-        <label className={labelClass}>Deskripsi (Opsional)</label>
+        <label className={labelClass}>Keterangan Pemicu (Opsional)</label>
         <textarea
           name="description"
           value={formData.description}
           onChange={handleChange}
-          placeholder="Contoh: Gaji, Tagihan Listrik, dll"
-          className={`${inputClass} h-28 py-4 resize-none`}
+          placeholder="Contoh: Tagihan WiFi Indihome per tanggal ini..."
+          className={`${inputClass} !h-24 py-4 resize-none`}
         ></textarea>
       </div>
 
-      {/* Note Box */}
+      {/* Tips Box */}
       <div className="bg-[#f0f4ff] border border-[#e0e7ff] rounded-2xl p-4 flex gap-4">
         <div className="w-10 h-10 rounded-xl bg-white border border-[#e0e7ff] flex items-center justify-center text-blue-500 shrink-0 shadow-sm">
           <Info size={20} />
@@ -142,24 +211,30 @@ const RecurringForm = ({ initialData = {}, onSubmit, onCancel }) => {
         <div>
           <p className="text-xs text-[#42526e] leading-relaxed">
             <span className="font-bold text-blue-600 block mb-1">Catatan Sistem:</span>
-            Sistem cron job akan memproses transaksi ini secara otomatis pada pukul 00:01 setiap hari tanggal berlakunya, atau divalidasi selambat-lambatnya setiap interval 1 jam sekali.
+            Sistem cron job akan memproses transaksi ini secara otomatis pada pukul 00:01 setiap hari tanggal berlakunya, atau selambat-lambatnya pada 1 jam sekali.
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-10 pt-4 border-t border-gray-100">
+      {/* Footer */}
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="text-sm font-bold text-gray-500 hover:text-gray-700 transition-all uppercase tracking-wider"
+          className="w-full sm:w-auto text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-6 py-4 rounded-2xl transition-all uppercase"
         >
           Batal
         </button>
         <button
           type="submit"
-          className="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-10 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 transition active:scale-[0.98]"
+          disabled={isSubmitting}
+          className={`w-full sm:w-auto text-white px-10 py-4 flex-1 sm:flex-none rounded-2xl font-black text-sm shadow-lg transition active:scale-[0.98] ${
+            activeTab === 'expense' 
+            ? 'bg-red-500 hover:bg-red-600 shadow-red-200 text-red-50' 
+            : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200 text-emerald-50'
+          } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          Simpan
+          {isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi Berulang'}
         </button>
       </div>
     </form>

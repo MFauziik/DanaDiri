@@ -21,6 +21,11 @@ import {
   Target, // Added Target back
   Car,
   Plane,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  ShieldCheck,
+  HelpCircle,
 } from 'lucide-react';
 
 import api from '../services/api';
@@ -309,28 +314,28 @@ const displaySavingPercentage = Math.max(savingPercentage, 0);
 
 let statusColor = 'bg-emerald-100 text-emerald-700';
 let progressColor = 'bg-emerald-500';
-let statusIcon = '🟢';
+let statusIcon = <CheckCircle2 size={24} />;
 
 if (insight.status === 'Bahaya') {
   statusColor = 'bg-rose-100 text-rose-700';
   progressColor = 'bg-rose-500';
-  statusIcon = '🔴';
+  statusIcon = <AlertCircle size={24} className="text-rose-500" />;
 } else if (insight.status === 'Waspada' || insight.status === 'WARNING') {
   statusColor = 'bg-amber-100 text-amber-700';
   progressColor = 'bg-amber-500';
-  statusIcon = '🟡';
+  statusIcon = <AlertTriangle size={24} className="text-amber-500" />;
 } else if (insight.status === 'Sehat') {
   statusColor = 'bg-blue-100 text-blue-700';
   progressColor = 'bg-blue-500';
-  statusIcon = '🔵';
+  statusIcon = <ShieldCheck size={24} className="text-blue-500" />;
 } else if (insight.status === 'Sangat Sehat' || insight.status === 'AMAN') {
   statusColor = 'bg-emerald-100 text-emerald-700';
   progressColor = 'bg-emerald-500';
-  statusIcon = '🟢';
+  statusIcon = <CheckCircle2 size={24} className="text-emerald-500" />;
 } else if (insight.status === 'Cukup') {
   statusColor = 'bg-slate-100 text-slate-700';
   progressColor = 'bg-slate-500';
-  statusIcon = '⚪';
+  statusIcon = <HelpCircle size={24} className="text-slate-500" />;
 }
   const stats = [
     {
@@ -456,7 +461,7 @@ if (insight.status === 'Bahaya') {
               <span
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold w-fit ${statusColor}`}
               >
-                <span>{statusIcon}</span>
+                <span className="flex items-center justify-center w-4 h-4">{statusIcon}</span>
                 {insight.status}
               </span>
             </div>

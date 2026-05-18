@@ -1,13 +1,49 @@
 import { useState, useEffect } from 'react';
-import { CATEGORIES } from '../utils/constants';
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '../utils/constants';
 import { formatNumber, parseRupiah } from '../utils/currency';
-import { Calendar, ChevronDown, Lightbulb } from 'lucide-react';
+import { 
+  Calendar, ChevronDown, Lightbulb, Wallet, Briefcase, Home, 
+  Banknote, Coffee, Zap, Droplets, Phone, Building, PiggyBank, 
+  Car, ShoppingBag, Gamepad2, HeartPulse, Receipt, MoreHorizontal,
+  CupSoda, Wifi, HandCoins, Handshake, Gift
+} from 'lucide-react';
+
+const categoryIcons = {
+  'Penghasilan': Wallet,
+  'Investasi': Briefcase,
+  'Jual Tanah': Home,
+  'Kos-kosan': Home,
+  'Tunjangan': Banknote,
+  'Gaji': Wallet,
+  'Uang Saku': HandCoins,
+  'Bisnis': Handshake,
+  'Bonus': Banknote,
+  'Hadiah': Gift,
+  'Pencairan Dana': Banknote,
+  'Jajan': Coffee,
+  'Minuman': CupSoda,
+  'Tabungan': PiggyBank,
+  'Tagihan Listrik': Zap,
+  'Tagihan Air': Droplets,
+  'Internet': Wifi,
+  'Tagihan Telepon': Phone,
+  'SPP': Building,
+  'Makanan': Coffee,
+  'Transportasi': Car,
+  'Belanja': ShoppingBag,
+  'Hiburan': Gamepad2,
+  'Kesehatan': HeartPulse,
+  'Tagihan': Receipt,
+  'Lainnya': MoreHorizontal,
+};
 
 const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
+  const [activeTab, setActiveTab] = useState(initialData.type || 'expense');
+  
   const [formData, setFormData] = useState({
     amount: initialData.amount || '',
     type: initialData.type || 'expense',
-    category: initialData.category || CATEGORIES[0],
+    category: initialData.category || EXPENSE_CATEGORIES[0],
     description: initialData.description || '',
     date: initialData.date ? initialData.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
   });
@@ -16,11 +52,20 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     initialData.amount ? formatNumber(initialData.amount) : ''
   );
 
-  const [activeTab, setActiveTab] = useState(formData.type);
+  const [taxPercentage, setTaxPercentage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Handle Tab change specifically to update categories list
   const handleTabChange = (type) => {
     setActiveTab(type);
-    setFormData((prev) => ({ ...prev, type }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      type,
+      category: type === 'expense' ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]
+    }));
+    if (type !== 'expense') {
+      setTaxPercentage(''); // Reset tax back if switching to income
+    }
   };
 
   const handleChange = (e) => {
@@ -37,38 +82,65 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleTaxChange = (e) => {
+    let val = e.target.value;
+    if (val < 0) val = 0;
+    if (val > 100) val = 100;
+    setTaxPercentage(val);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.amount <= 0) {
       alert('Jumlah harus lebih dari 0');
       return;
     }
 
-    onSubmit(formData);
+    let finalAmount = formData.amount;
+    if (activeTab === 'expense' && taxPercentage) {
+       const taxAmount = (finalAmount * parseFloat(taxPercentage)) / 100;
+       finalAmount += taxAmount;
+    }
+    
+    // Menggabungkan tanggal yang dipilih dengan waktu saat ini di lokal
+    const selectedDate = new Date(formData.date);
+    const now = new Date();
+    
+    // Setel jam, menit, detik mengikuti waktu saat ini
+    selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ ...formData, amount: finalAmount, date: selectedDate.toISOString() });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const inputClass = "w-full h-14 px-5 bg-[#f8faff] border border-[#f0f3f9] rounded-2xl text-[#1f2937] font-medium outline-none focus:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-50/50 transition-all placeholder:text-gray-300";
   const labelClass = "block text-xs font-extrabold text-[#9ca3af] tracking-widest uppercase mb-3 px-1";
 
+  const currentCategories = activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Type Toggle */}
-      <div className="p-1 bg-gray-100 rounded-2xl flex relative h-12">
+      <div className="p-1.5 bg-gray-100/80 rounded-2xl flex relative h-14 border border-gray-200/50 shadow-inner">
         <div 
-          className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-sm transition-all duration-300 ease-out z-0"
-          style={{ left: activeTab === 'expense' ? '4px' : 'calc(50%)' }}
+          className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.1)] transition-all duration-300 ease-out z-0"
+          style={{ left: activeTab === 'expense' ? '6px' : 'calc(50%)' }}
         ></div>
         <button
           type="button"
           onClick={() => handleTabChange('expense')}
-          className={`flex-1 flex items-center justify-center text-sm font-bold z-10 transition-colors duration-300 ${activeTab === 'expense' ? 'text-blue-600' : 'text-gray-500'}`}
+          className={`flex-1 flex items-center justify-center text-[13px] font-extrabold z-10 transition-colors duration-300 ${activeTab === 'expense' ? 'text-red-500' : 'text-gray-400'}`}
         >
           Pengeluaran
         </button>
         <button
           type="button"
           onClick={() => handleTabChange('income')}
-          className={`flex-1 flex items-center justify-center text-sm font-bold z-10 transition-colors duration-300 ${activeTab === 'income' ? 'text-blue-600' : 'text-gray-500'}`}
+          className={`flex-1 flex items-center justify-center text-[13px] font-extrabold z-10 transition-colors duration-300 ${activeTab === 'income' ? 'text-emerald-500' : 'text-gray-400'}`}
         >
           Pemasukan
         </button>
@@ -83,14 +155,14 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
                 value={displayAmount}
                 onChange={handleAmountChange}
                 placeholder="Rp 0"
-                className={`${inputClass} !text-lg !font-bold ${displayAmount ? 'pl-12' : ''}`}
+                className={`${inputClass} !text-xl !font-black text-gray-800 ${displayAmount ? 'pl-14' : ''}`}
                 required
               />
-              {displayAmount && <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rp</span>}
+              {displayAmount && <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-gray-500 text-lg">Rp</span>}
         </div>
       </div>
 
-      {/* Date and Category Row */}
+      {/* Date and Tax Row */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Tanggal</label>
@@ -100,41 +172,75 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className={`${inputClass} appearance-none pr-12`}
+              className={`${inputClass} appearance-none pr-12 text-sm font-bold text-gray-600`}
               required
             />
             <Calendar size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        <div>
-          <label className={labelClass}>Kategori</label>
-          <div className="relative">
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className={`${inputClass} appearance-none pr-12`}
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        
+        {activeTab === 'expense' ? (
+          <div>
+            <label className={labelClass}>Pajak (%) <span className="text-[10px] text-gray-400 font-medium normal-case">(Opsional)</span></label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={taxPercentage}
+                onChange={handleTaxChange}
+                placeholder="0"
+                className={`${inputClass} pr-12 font-bold text-gray-600`}
+              />
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-gray-400">%</span>
+            </div>
           </div>
+        ) : (
+          <div className="flex flex-col justify-end">
+             <div className="bg-[#f0f4ff]/50 border border-[#e0e7ff] rounded-2xl h-14 flex items-center px-4">
+              <p className="text-xs text-[#42526e] font-medium italic">Tidak ada pajak untuk pemasukan</p>
+             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Category Grid Selection */}
+      <div>
+        <label className={labelClass}>Pilih Kategori</label>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-52 overflow-y-auto scrollbar-hide p-1 pb-4">
+          {currentCategories.map((cat) => {
+            const Icon = categoryIcons[cat] || MoreHorizontal;
+            const isSelected = formData.category === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setFormData({ ...formData, category: cat })}
+                className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-[18px] transition-all duration-200 border-2
+                  ${isSelected 
+                    ? (activeTab === 'expense' ? 'bg-red-50/50 border-red-300 shadow-sm' : 'bg-emerald-50/50 border-emerald-300 shadow-sm') 
+                    : 'bg-[#f8faff] border-transparent hover:bg-gray-100'}
+                `}
+              >
+                <div className={`p-2 rounded-xl transition-colors ${isSelected ? (activeTab === 'expense' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600') : 'bg-white text-gray-400 shadow-sm'}`}>
+                   <Icon size={22} className="stroke-[2.5]" />
+                </div>
+                <span className={`text-[10px] font-bold text-center leading-tight ${isSelected ? (activeTab === 'expense' ? 'text-red-700' : 'text-emerald-700') : 'text-gray-500'}`}>{cat}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Description Input */}
       <div>
-        <label className={labelClass}>Catatan (Opsional)</label>
+        <label className={labelClass}>Catatan Tambahan</label>
         <textarea
           name="description"
           value={formData.description}
           onChange={handleChange}
-          placeholder="Tambahkan deskripsi tambahan di sini..."
-          className={`${inputClass} h-28 py-4 resize-none`}
+          placeholder="Tulis detail transaksi di sini (bila perlu)..."
+          className={`${inputClass} !h-24 py-4 resize-none`}
         ></textarea>
       </div>
 
@@ -146,25 +252,32 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
         <div>
           <p className="text-xs text-[#42526e] leading-relaxed">
             <span className="font-bold text-blue-600 block mb-1">Tips Keuangan:</span>
-            Gunakan kategori yang spesifik agar laporan bulanan Anda lebih akurat dan mudah dianalisis.
+            {activeTab === 'expense' 
+              ? "Bila ada PPN (misal 11%), Anda cukup memasukkannya pada kolom Pajak. Sistem akan otomatis menjumlahkannya." 
+              : "Catat setiap pemasukan dengan rinci agar Anda dapat menganalisis sumber pendapatan terbaik Anda."}
           </p>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-10 pt-4">
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="text-sm font-bold text-gray-500 hover:text-gray-700 transition-all uppercase tracking-wider"
+          className="w-full sm:w-auto text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-6 py-4 rounded-2xl transition-all"
         >
           Batalkan
         </button>
         <button
           type="submit"
-          className="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-10 py-4 rounded-[20px] font-bold text-sm shadow-lg shadow-indigo-100 transition active:scale-[0.98]"
+          disabled={isSubmitting}
+          className={`w-full sm:w-auto text-white px-10 py-4 flex-1 sm:flex-none rounded-2xl font-black text-sm shadow-lg transition active:scale-[0.98] ${
+            activeTab === 'expense' 
+            ? 'bg-red-500 hover:bg-red-600 shadow-red-200 text-red-50' 
+            : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200 text-emerald-50'
+          } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          Simpan Transaksi
+          {isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}
         </button>
       </div>
     </form>

@@ -15,6 +15,8 @@ const GoalForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [displayAmount, setDisplayAmount] = useState(
     initialData.targetAmount ? formatNumber(initialData.targetAmount) : ''
   );
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,7 +36,7 @@ const GoalForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validasi
@@ -43,10 +45,24 @@ const GoalForm = ({ initialData = {}, onSubmit, onCancel }) => {
       return;
     }
 
-    onSubmit({
-      ...formData,
-      targetAmount: formData.targetAmount // Sudah dalam bentuk number
-    });
+    // Set deadline di penghujung hari jam 23:59 (Waktu Lokal) untuk membenahi Bug Jam 7
+    let finalDeadline = formData.deadline;
+    if (formData.deadline) {
+      const dDate = new Date(formData.deadline);
+      dDate.setHours(23, 59, 59);
+      finalDeadline = dDate.toISOString();
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        ...formData,
+        targetAmount: formData.targetAmount, // Sudah dalam bentuk number
+        deadline: finalDeadline
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -146,9 +162,10 @@ const GoalForm = ({ initialData = {}, onSubmit, onCancel }) => {
         </button>
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          disabled={isSubmitting}
+          className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          Simpan Target
+          {isSubmitting ? 'Menyimpan...' : 'Simpan Target'}
         </button>
       </div>
     </form>

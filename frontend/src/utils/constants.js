@@ -1,14 +1,36 @@
-export const CATEGORIES = [
+export const INCOME_CATEGORIES = [
+  'Penghasilan',
+  'Gaji',
+  'Uang Saku',
+  'Bisnis',
+  'Bonus',
+  'Investasi',
+  'Hadiah',
+  'Kos-kosan',
+  'Jual Tanah',
+  'Tunjangan',
+  'Pencairan Dana',
+  'Lainnya',
+];
+
+export const EXPENSE_CATEGORIES = [
+  'Jajan',
+  'Minuman',
+  'Tabungan',
+  'Tagihan Listrik',
+  'Tagihan Air',
+  'Internet',
+  'SPP',
   'Makanan',
   'Transportasi',
   'Belanja',
   'Hiburan',
   'Kesehatan',
   'Tagihan',
-  'Gaji',
-  'Investasi',
   'Lainnya',
 ];
+
+export const CATEGORIES = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES];
 
 export const TRANSACTION_TYPES = [
   { value: 'income', label: 'Pemasukan' },

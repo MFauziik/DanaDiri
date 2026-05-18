@@ -12,9 +12,8 @@ import {
 import { formatRupiah } from '../utils/currency';
 import CategoryIcon from '../components/CategoryIcon';
 import { exportToPDF, exportToExcel } from '../utils/export';
-import { FileText, FileSpreadsheet } from 'lucide-react';
-
-const CATEGORY_OPTIONS = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Tagihan', 'Gaji', 'Investasi', 'Tabungan', 'Lainnya'];
+import { FileText, FileSpreadsheet, AlertTriangle, PlusCircle } from 'lucide-react';
+import { CATEGORIES as CATEGORY_OPTIONS } from '../utils/constants';
 
 const generateLast12Months = () => {
   const list = [];
@@ -278,8 +277,8 @@ if (error) {
       <Sidebar user={user} setUser={setUser} />
       <main className="flex-1 p-6 md:p-8">
         <div className="bg-white border border-red-100 rounded-3xl p-8 text-center shadow-sm">
-          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-3xl">
-            ⚠️
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-red-500">
+            <AlertTriangle size={32} />
           </div>
           <h3 className="text-xl font-bold text-red-700 mb-2">
             Gagal Memuat Data
@@ -327,7 +326,7 @@ if (error) {
                 onClick={() => setShowForm(true)}
                 className="h-12 px-5 rounded-xl bg-[#2f6df6] hover:bg-[#245ce0] text-white transition font-semibold text-sm shadow-md flex items-center justify-center gap-2"
               >
-                <span className="text-lg">＋</span>
+                <PlusCircle size={20} />
                 Tambah Transaksi
               </button>
             </div>
