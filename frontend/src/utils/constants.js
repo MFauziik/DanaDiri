@@ -6,8 +6,6 @@ export const INCOME_CATEGORIES = [
   'Bonus',
   'Investasi',
   'Hadiah',
-  'Kos-kosan',
-  'Jual Tanah',
   'Tunjangan',
   'Pencairan Dana',
   'Lainnya',
@@ -19,7 +17,6 @@ export const EXPENSE_CATEGORIES = [
   'Tabungan',
   'Tagihan Listrik',
   'Tagihan Air',
-  'Tagihan Telepon',
   'Internet',
   'SPP',
   'Makanan',
@@ -27,7 +24,6 @@ export const EXPENSE_CATEGORIES = [
   'Belanja',
   'Hiburan',
   'Kesehatan',
-  'Tagihan',
   'Lainnya',
 ];
 

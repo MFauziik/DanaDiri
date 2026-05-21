@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../components/Sidebar';
 import TransactionModal from '../components/TransactionModal';
 import RecurringModal from '../components/RecurringModal';
+import { completeOnboardingStep } from '../components/OnboardingWelcome';
 import api from '../services/api';
 import {
   getRecurring,
@@ -131,7 +132,8 @@ const Transactions = ({ user, setUser }) => {
       }
 
       await fetchTransactions();
-        await fetchRecurrings();
+      await fetchRecurrings();
+      completeOnboardingStep(user, 'transaction');
       setShowForm(false);
     } catch (error) {
       console.error('Gagal menambah transaksi:', error);

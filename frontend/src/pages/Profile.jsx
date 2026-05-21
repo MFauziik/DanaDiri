@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Camera, Lock } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { updateProfile } from '../services/auth';
+import { completeOnboardingStep } from '../components/OnboardingWelcome';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -100,6 +101,7 @@ const Profile = ({ user, setUser }) => {
       }
 
       setUser(updatedUser);
+      completeOnboardingStep(updatedUser, 'profile');
       setMessage({ type: 'success', text: 'Profil berhasil diperbarui!' });
       setPassword(''); // clear password if set
     } catch (error) {

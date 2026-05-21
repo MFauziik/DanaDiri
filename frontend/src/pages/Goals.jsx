@@ -7,12 +7,13 @@ import {
   deleteGoal,
   updateGoal,
 } from '../services/goals';
+import { completeOnboardingStep } from '../components/OnboardingWelcome';
 import { logout } from '../services/auth';
 import AddFundsModal from '../components/AddFundsModal';
 import Sidebar from '../components/Sidebar';
 import { formatRupiah, formatNumber, parseRupiah } from '../utils/currency';
 import CategoryIcon from '../components/CategoryIcon';
-import { Target, Plus, Pencil } from 'lucide-react';
+import { Target, Plus, Pencil, Lightbulb } from 'lucide-react';
 
 const Goals = ({ user, setUser }) => {
   const navigate = useNavigate();
@@ -129,6 +130,7 @@ const Goals = ({ user, setUser }) => {
 
       await createGoal(payload);
       await fetchGoals();
+      completeOnboardingStep(user, 'goal');
       closeTargetModal();
     } catch (error) {
       console.error('Gagal membuat goal:', error);
@@ -423,8 +425,9 @@ const Goals = ({ user, setUser }) => {
 
                   {/* Saran Nabung */}
                   <div className="bg-[#eff6ff] rounded-[12px] py-2.5 px-3 mb-5 border border-[#bfdbfe] flex justify-center items-center text-center">
-                    <p className="text-xs font-bold text-[#1d4ed8]">
-                      💡 {formatRupiah(getRecommendedDaily(goal))}{' '}
+                    <p className="text-xs font-bold text-[#1d4ed8] inline-flex items-center gap-2">
+                      <Lightbulb size={14} className="text-[#2563eb]" />
+                      {formatRupiah(getRecommendedDaily(goal))}{' '}
                       <span className="font-medium text-[#2563eb]">
                         (saran nabung/hari)
                       </span>
@@ -534,8 +537,9 @@ const Goals = ({ user, setUser }) => {
               </div>
 
               <div className="bg-[#f4f7fc] border border-[#e3eaf4] rounded-[16px] p-4 mt-1">
-                <p className="text-sm font-bold text-[#2563eb] mb-1">
-                  💡 Tips Tabungan
+                <p className="text-sm font-bold text-[#2563eb] mb-1 inline-flex items-center gap-2">
+                  <Lightbulb size={16} className="text-[#2563eb]" />
+                  Tips Tabungan
                 </p>
                 <p className="text-sm text-[#5f6b82] leading-relaxed">
                   Sistem akan menghitung otomatis berapa jumlah yang harus

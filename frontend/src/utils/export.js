@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
-// 🔥 FILTER HELPER
+// Filter helper
 export const filterTransactions = (transactions, filters) => {
   return transactions.filter((t) => {
     const date = new Date(t.date);
@@ -18,7 +18,7 @@ export const filterTransactions = (transactions, filters) => {
   });
 };
 
-// 🔥 FILTER BULAN
+// Filter bulan
 export const filterByMonth = (transactions, month, year) => {
   return transactions.filter((t) => {
     const d = new Date(t.date);
@@ -26,14 +26,14 @@ export const filterByMonth = (transactions, month, year) => {
   });
 };
 
-// 🔥 HITUNG TOTAL
+// Hitung total
 const calculateTotal = (data) => {
   const income = data.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const expense = data.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   return { income, expense, balance: income - expense };
 };
 
-// 🔥 EXPORT PDF
+// Export PDF
 export const exportToPDF = (transactions, title = 'Laporan Keuangan - DanaDiri') => {
   const doc = new jsPDF();
 
@@ -91,7 +91,7 @@ export const exportToPDF = (transactions, title = 'Laporan Keuangan - DanaDiri')
   doc.save(`${title.replace(/ /g, '_')}.pdf`);
 };
 
-// 🔥 EXPORT EXCEL
+// Export Excel
 export const exportToExcel = async (transactions, fileName = 'Laporan_Keuangan_DanaDiri') => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Laporan');

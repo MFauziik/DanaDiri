@@ -6,7 +6,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
   Filler,
 } from 'chart.js';
@@ -18,7 +18,7 @@ import {
   ShoppingCart,
   MoreHorizontal,
   PlusCircle,
-  Target, // Added Target back
+  Target,
   Car,
   Plane,
   CheckCircle2,
@@ -26,19 +26,26 @@ import {
   AlertTriangle,
   ShieldCheck,
   HelpCircle,
+  Receipt,
+  BarChart3,
+  Download,
 } from 'lucide-react';
 
 import api from '../services/api';
 import { formatRupiah } from '../utils/currency';
 import Sidebar from '../components/Sidebar';
 import CategoryIcon from '../components/CategoryIcon';
+import OnboardingWelcome from '../components/OnboardingWelcome';
+import QuickStartGuide from '../components/QuickStartGuide';
+import EmptyState from '../components/EmptyState';
+import Tooltip from '../components/Tooltip';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  Tooltip,
+  ChartTooltip,
   Legend,
   Filler
 );
@@ -74,7 +81,7 @@ const Dashboard = ({ user, setUser }) => {
     totalExpense: 0,
     balance: 0,
     categoryExpense: {},
-    chartData: [], // Nama diubah dari monthlyData agar lebih generic
+    chartData: [],
   });
   const [chartPeriod, setChartPeriod] = useState('6months');
   const [insight, setInsight] = useState({
@@ -145,7 +152,7 @@ const Dashboard = ({ user, setUser }) => {
   };
 
   // =========================
-  // DATA DUMMY AGAR MIRIP FIGMA
+  // DATA
   // =========================
   const todayIncome = 0; 
   const todayExpense = 0;
@@ -158,6 +165,12 @@ const Dashboard = ({ user, setUser }) => {
     (acc, curr) => acc + curr,
     0
   );
+
+  // Detect new user state
+  const isNewUser = recentTransactions.length === 0 && savingGoals.length === 0 && summary.totalIncome === 0 && summary.totalExpense === 0;
+  const hasTransactions = recentTransactions.length > 0;
+  const hasGoals = savingGoals.length > 0;
+  const hasCategories = Object.keys(categoryExpenseData).length > 0;
 
   const chartData = {
     labels: summary.chartData.length > 0 
@@ -293,10 +306,7 @@ const Dashboard = ({ user, setUser }) => {
     },
   },
 };
-  // Goals removed dummy, using state savingGoals
-// =========================
-// FINANCIAL INSIGHT LOGIC
-// =========================
+
 // =========================
 // FINANCIAL INSIGHT LOGIC (Backend Driven)
 // =========================
@@ -337,6 +347,7 @@ if (insight.status === 'Bahaya') {
   progressColor = 'bg-slate-500';
   statusIcon = <HelpCircle size={24} className="text-slate-500" />;
 }
+
   const stats = [
     {
       title: 'Total Saldo Anda',
@@ -345,22 +356,23 @@ if (insight.status === 'Bahaya') {
       iconBg: 'bg-blue-50',
       badge: 'Aktif',
       badgeColor: 'text-blue-600 bg-blue-50',
+      hint: 'Selisih total pemasukan dan pengeluaran',
     },
     {
       title: 'Pendapatan Bulanan',
       value: formatRupiah(monthlyIncome),
       icon: <TrendingUp size={16} className="text-emerald-500" />,
       iconBg: 'bg-emerald-50',
+      hint: 'Total pemasukan bulan ini',
     },
     {
       title: 'Pengeluaran Bulanan',
       value: formatRupiah(monthlyExpense),
       icon: <ShoppingCart size={16} className="text-rose-500" />,
       iconBg: 'bg-rose-50',
+      hint: 'Total pengeluaran bulan ini',
     },
   ];
-
-  // menus removed, using Sidebar component
 
   if (loading) {
     return (
@@ -388,11 +400,25 @@ if (insight.status === 'Bahaya') {
                 Dashboard Keuangan
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                Selamat datang kembali, Ringkasan aktivitas Anda hari ini.
+                {isNewUser 
+                  ? 'Ayo mulai kelola keuanganmu dengan DanaDiri!'
+                  : 'Selamat datang kembali, Ringkasan aktivitas Anda hari ini.'
+                }
               </p>
             </div>
 
             <div className="flex items-center gap-4">
+              {/* Quick action buttons */}
+              <Tooltip text="Tambah transaksi baru" position="bottom">
+                <button
+                  onClick={() => navigate('/transactions')}
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-300 hover:-translate-y-0.5"
+                >
+                  <PlusCircle size={15} />
+                  Transaksi
+                </button>
+              </Tooltip>
+
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-semibold text-slate-700">
@@ -420,33 +446,49 @@ if (insight.status === 'Bahaya') {
             </div>
           </div>
 
+          {/* ONBOARDING WELCOME - for new users */}
+          <OnboardingWelcome 
+            user={user} 
+            hasTransactions={hasTransactions} 
+            hasGoals={hasGoals} 
+          />
+
+          {/* QUICK START GUIDE - for new users */}
+          {isNewUser && <QuickStartGuide />}
+
           {/* STATS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
             {stats.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300"
-              >
-                <div className="flex items-start justify-between mb-5">
-                  <div className={`w-9 h-9 rounded-xl ${item.iconBg} flex items-center justify-center`}>
-                    {item.icon}
+              <Tooltip key={index} text={item.hint} position="top">
+                <div
+                  className="w-full bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300"
+                >
+                  <div className="flex items-start justify-between mb-5">
+                    <div className={`w-9 h-9 rounded-xl ${item.iconBg} flex items-center justify-center`}>
+                      {item.icon}
+                    </div>
+
+                    {item.badge && (
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${item.badgeColor}`}>
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
 
-                  {item.badge && (
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${item.badgeColor}`}>
-                      {item.badge}
-                    </span>
-                  )}
+                  <p className="text-xs text-slate-400 mb-1">{item.title}</p>
+                  <h3 className="text-3xl font-bold text-slate-800 leading-none">
+                    {item.value}
+                  </h3>
+                  {/* Descriptive hint below stat */}
+                  <p className="text-[10px] text-slate-300 mt-2">
+                    {item.hint}
+                  </p>
                 </div>
-
-                <p className="text-xs text-slate-400 mb-1">{item.title}</p>
-                <h3 className="text-3xl font-bold text-slate-800 leading-none">
-                  {item.value}
-                </h3>
-              </div>
+              </Tooltip>
             ))}
           </div>
-                    {/* FINANCIAL INSIGHT */}
+
+          {/* FINANCIAL INSIGHT */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 mb-6 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
               <div>
@@ -467,25 +509,37 @@ if (insight.status === 'Bahaya') {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
-                <p className="text-xs text-slate-400 mb-1">Total Pemasukan</p>
-                <h3 className="text-xl font-bold text-slate-800">
+              <div className="rounded-2xl bg-emerald-50/50 border border-emerald-100 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp size={12} className="text-emerald-500" />
+                  <p className="text-xs text-slate-400">Total Pemasukan</p>
+                </div>
+                <h3 className="text-xl font-bold text-emerald-700">
                   {formatRupiah(totalIncomeInsight)}
                 </h3>
+                <p className="text-[10px] text-emerald-400 mt-1">Semua pendapatan bulan ini</p>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
-                <p className="text-xs text-slate-400 mb-1">Total Pengeluaran</p>
-                <h3 className="text-xl font-bold text-slate-800">
+              <div className="rounded-2xl bg-rose-50/50 border border-rose-100 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingDown size={12} className="text-rose-500" />
+                  <p className="text-xs text-slate-400">Total Pengeluaran</p>
+                </div>
+                <h3 className="text-xl font-bold text-rose-700">
                   {formatRupiah(totalExpenseInsight)}
                 </h3>
+                <p className="text-[10px] text-rose-400 mt-1">Semua biaya bulan ini</p>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
-                <p className="text-xs text-slate-400 mb-1">Tabungan Bulan Ini</p>
-                <h3 className="text-xl font-bold text-slate-800">
+              <div className="rounded-2xl bg-blue-50/50 border border-blue-100 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet size={12} className="text-blue-500" />
+                  <p className="text-xs text-slate-400">Tabungan Bulan Ini</p>
+                </div>
+                <h3 className="text-xl font-bold text-blue-700">
                   {formatRupiah(savingInsight)}
                 </h3>
+                <p className="text-[10px] text-blue-400 mt-1">Sisa setelah pengeluaran</p>
               </div>
             </div>
 
@@ -505,6 +559,24 @@ if (insight.status === 'Bahaya') {
                   style={{ width: `${expenseBarWidth}%` }}
                 />
               </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                {expensePercentage <= 50 ? (
+                  <span className="inline-flex items-center gap-1">
+                    <CheckCircle2 size={12} className="text-emerald-500" />
+                    Pengeluaran masih terkendali
+                  </span>
+                ) : expensePercentage <= 80 ? (
+                  <span className="inline-flex items-center gap-1">
+                    <AlertTriangle size={12} className="text-amber-500" />
+                    Pengeluaran mulai tinggi, perhatikan budget
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    <AlertCircle size={12} className="text-red-500" />
+                    Pengeluaran sudah sangat tinggi!
+                  </span>
+                )}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
@@ -530,29 +602,34 @@ if (insight.status === 'Bahaya') {
             {/* Chart */}
             <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-  <div>
-    <h2 className="text-base font-semibold text-slate-800">
-      Arus Keuangan
-    </h2>
-    <p className="text-xs text-slate-400 mt-1">
-      {chartPeriod === 'week' ? 'Breakdown harian 7 hari terakhir' : 
-       chartPeriod === 'month' ? 'Breakdown harian 30 hari terakhir' : 
-       chartPeriod === 'year' ? 'Tren bulanan tahun ini' : 
-       'Tren bulanan 6 bulan terakhir'}
-    </p>
-  </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Tooltip text="Grafik perbandingan pemasukan vs pengeluaran" position="right">
+                      <BarChart3 size={16} className="text-blue-500" />
+                    </Tooltip>
+                    <h2 className="text-base font-semibold text-slate-800">
+                      Arus Keuangan
+                    </h2>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {chartPeriod === 'week' ? 'Breakdown harian 7 hari terakhir' : 
+                     chartPeriod === 'month' ? 'Breakdown harian 30 hari terakhir' : 
+                     chartPeriod === 'year' ? 'Tren bulanan tahun ini' : 
+                     'Tren bulanan 6 bulan terakhir'}
+                  </p>
+                </div>
 
-  <select 
-    value={chartPeriod}
-    onChange={(e) => setChartPeriod(e.target.value)}
-    className="text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-500 bg-slate-50 outline-none cursor-pointer hover:bg-slate-100 transition"
-  >
-    <option value="week">Minggu Ini</option>
-    <option value="month">Bulan Ini</option>
-    <option value="6months">6 Bulan Terakhir</option>
-    <option value="year">Tahun Ini</option>
-  </select>
-</div>
+                <select 
+                  value={chartPeriod}
+                  onChange={(e) => setChartPeriod(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-500 bg-slate-50 outline-none cursor-pointer hover:bg-slate-100 transition"
+                >
+                  <option value="week">Minggu Ini</option>
+                  <option value="month">Bulan Ini</option>
+                  <option value="6months">6 Bulan Terakhir</option>
+                  <option value="year">Tahun Ini</option>
+                </select>
+              </div>
 
               <div className="h-[320px]">
                 <Line data={chartData} options={chartOptions} />
@@ -565,34 +642,44 @@ if (insight.status === 'Bahaya') {
                 Pengeluaran per Kategori
               </h2>
 
-              <div className="space-y-5">
-                {Object.entries(categoryExpenseData).map(([category, amount]) => {
-                  const percentage = totalCategoryExpense
-                    ? (amount / totalCategoryExpense) * 100
-                    : 0;
+              {hasCategories ? (
+                <div className="space-y-5">
+                  {Object.entries(categoryExpenseData).map(([category, amount]) => {
+                    const percentage = totalCategoryExpense
+                      ? (amount / totalCategoryExpense) * 100
+                      : 0;
 
-                  return (
-                    <div key={category}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon category={category} className="w-3.5 h-3.5 text-blue-600" />
-                          <span className="text-xs text-slate-600">{category}</span>
+                    return (
+                      <div key={category}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <CategoryIcon category={category} className="w-3.5 h-3.5 text-blue-600" />
+                            <span className="text-xs text-slate-600">{category}</span>
+                          </div>
+                          <span className="text-xs font-semibold text-slate-800">
+                            {formatRupiah(amount)}
+                          </span>
                         </div>
-                        <span className="text-xs font-semibold text-slate-800">
-                          {formatRupiah(amount)}
-                        </span>
-                      </div>
 
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-600 rounded-full transition-all duration-700"
-                          style={{ width: `${percentage}%` }}
-                        />
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-600 rounded-full transition-all duration-700"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState
+                  type="category"
+                  title="Belum ada data kategori"
+                  description="Kategori pengeluaran akan muncul otomatis saat kamu mencatat transaksi"
+                  ctaText="Tambah Transaksi"
+                  onCtaClick={() => navigate('/transactions')}
+                />
+              )}
 
               <div className="pt-6 mt-6 border-t border-slate-100">
                 <p className="text-xs text-slate-400">
@@ -610,141 +697,188 @@ if (insight.status === 'Bahaya') {
             {/* Transaksi */}
             <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgba(15,23,42,0.03)] overflow-hidden">
               <div className="flex items-center justify-between px-5 py-5 border-b border-slate-100">
-                <h2 className="text-sm font-semibold text-slate-800">
-                  Transaksi Terbaru
-                </h2>
+                <div className="flex items-center gap-2">
+                  <Receipt size={16} className="text-slate-400" />
+                  <h2 className="text-sm font-semibold text-slate-800">
+                    Transaksi Terbaru
+                  </h2>
+                </div>
 
-                <button
-                  onClick={() => navigate('/transactions')}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 transition"
-                >
-                  Lihat Semua
-                </button>
+                <Tooltip text="Lihat semua riwayat transaksi" position="left">
+                  <button
+                    onClick={() => navigate('/transactions')}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700 transition"
+                  >
+                    Lihat Semua
+                  </button>
+                </Tooltip>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[600px]">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                      <th className="px-6 py-4 font-bold">Tanggal</th>
-                      <th className="px-6 py-4 font-bold">Kategori</th>
-                      <th className="px-6 py-4 font-bold">Jenis</th>
-                      <th className="px-6 py-4 font-bold text-right">Jumlah (Rp)</th>
-                    </tr>
-                  </thead>
+              {hasTransactions ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[600px]">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        <th className="px-6 py-4 font-bold">Tanggal</th>
+                        <th className="px-6 py-4 font-bold">Kategori</th>
+                        <th className="px-6 py-4 font-bold">Jenis</th>
+                        <th className="px-6 py-4 font-bold text-right">Jumlah (Rp)</th>
+                      </tr>
+                    </thead>
 
-                  <tbody className="divide-y divide-slate-50">
-                    {recentTransactions.map((trx, index) => (
-                      <tr
-                        key={trx._id || index}
-                        className="group hover:bg-slate-50/80 transition-all duration-200"
-                      >
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-medium text-slate-600">
-                            {new Date(trx.date).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </p>
-                        </td>
+                    <tbody className="divide-y divide-slate-50">
+                      {recentTransactions.map((trx, index) => (
+                        <tr
+                          key={trx._id || index}
+                          className="group hover:bg-slate-50/80 transition-all duration-200"
+                        >
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-medium text-slate-600">
+                              {new Date(trx.date).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </p>
+                          </td>
 
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
-                              <CategoryIcon category={trx.category} className="w-4 h-4 text-slate-600" />
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${trx.type === 'income' ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                                <CategoryIcon category={trx.category} className={`w-4 h-4 ${trx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`} />
+                              </div>
+                              <span className="text-sm font-semibold text-slate-800">
+                                {trx.category}
+                              </span>
                             </div>
-                            <span className="text-sm font-semibold text-slate-800">
-                              {trx.category}
-                            </span>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-tight ${
-                              trx.type === 'income'
-                                ? 'bg-emerald-50 text-emerald-600'
-                                : 'bg-rose-50 text-rose-600'
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-tight ${
+                                trx.type === 'income'
+                                  ? 'bg-emerald-50 text-emerald-600'
+                                  : 'bg-rose-50 text-rose-600'
+                              }`}
+                            >
+                              {trx.type === 'income' ? '↗ Pemasukan' : '↘ Pengeluaran'}
+                            </span>
+                          </td>
+
+                          <td
+                            className={`px-6 py-4 text-sm font-bold text-right ${
+                              trx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'
                             }`}
                           >
-                            {trx.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
-                          </span>
-                        </td>
-
-                        <td
-                          className={`px-6 py-4 text-sm font-bold text-right ${
-                            trx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'
-                          }`}
-                        >
-                          {trx.type === 'income'
-                            ? `+ ${formatRupiah(trx.amount).replace('Rp', 'Rp')}`
-                            : `- ${formatRupiah(Math.abs(trx.amount)).replace('Rp', 'Rp')}`}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                            {trx.type === 'income'
+                              ? `+ ${formatRupiah(trx.amount)}`
+                              : `- ${formatRupiah(Math.abs(trx.amount))}`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <EmptyState
+                  type="transaction"
+                  title="Belum ada transaksi"
+                  description="Yuk tambahkan transaksi pertamamu! Catat pemasukan dan pengeluaran harianmu untuk mulai memantau keuangan."
+                  ctaText="Tambah Transaksi Pertama"
+                  onCtaClick={() => navigate('/transactions')}
+                  icon={PlusCircle}
+                />
+              )}
             </div>
 
             {/* Goals */}
             <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-sm font-semibold text-slate-800">
-                  Target Tabungan
-                </h2>
+                <div className="flex items-center gap-2">
+                  <Target size={16} className="text-slate-400" />
+                  <h2 className="text-sm font-semibold text-slate-800">
+                    Target Tabungan
+                  </h2>
+                </div>
 
-                <button className="text-blue-600 hover:text-blue-700 transition">
-                  <PlusCircle size={17} />
-                </button>
+                <Tooltip text="Tambah target tabungan baru" position="left">
+                  <button 
+                    onClick={() => navigate('/goals')}
+                    className="text-blue-600 hover:text-blue-700 transition hover:bg-blue-50 p-1.5 rounded-lg"
+                  >
+                    <PlusCircle size={17} />
+                  </button>
+                </Tooltip>
               </div>
 
-              <div className="space-y-4">
-                {savingGoals.map((goal, index) => {
-                  const percentage = goal.targetAmount > 0 
-                    ? Math.round((goal.currentAmount / goal.targetAmount) * 100) 
-                    : 0;
-                  
-                  return (
-                    <div
-                      key={goal._id || index}
-                      className="rounded-2xl bg-slate-50 border border-slate-100 p-4"
-                    >
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className={`w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center`}>
-                          <CategoryIcon category={goal.category} className="text-blue-600" size={18} />
+              {hasGoals ? (
+                <div className="space-y-4">
+                  {savingGoals.map((goal, index) => {
+                    const percentage = goal.targetAmount > 0 
+                      ? Math.round((goal.currentAmount / goal.targetAmount) * 100) 
+                      : 0;
+                    
+                    return (
+                      <div
+                        key={goal._id || index}
+                        className="rounded-2xl bg-slate-50 border border-slate-100 p-4"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className={`w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center`}>
+                            <CategoryIcon category={goal.category} className="text-blue-600" size={18} />
+                          </div>
+
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-slate-800">
+                              {goal.name}
+                            </h3>
+                            <p className="text-xs text-slate-400">
+                              Target: {formatRupiah(goal.targetAmount)}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-slate-800">
-                            {goal.name}
-                          </h3>
-                          <p className="text-xs text-slate-400">
-                            Target: {formatRupiah(goal.targetAmount)}
-                          </p>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-slate-500">
+                            Progress
+                          </span>
+                          <span className="text-xs font-bold text-slate-800">
+                            {percentage}%
+                          </span>
                         </div>
-                      </div>
 
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-500">
-                          Progress
-                        </span>
-                        <span className="text-xs font-bold text-slate-800">
-                          {percentage}%
-                        </span>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${
+                              percentage >= 100 ? 'bg-emerald-500' : percentage >= 50 ? 'bg-blue-600' : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1.5">
+                          {percentage >= 100 ? (
+                            <span className="inline-flex items-center gap-1">
+                              <CheckCircle2 size={12} className="text-emerald-500" />
+                              Target tercapai!
+                            </span>
+                          ) : (
+                            `${formatRupiah(goal.currentAmount)} dari ${formatRupiah(goal.targetAmount)}`
+                          )}
+                        </p>
                       </div>
-
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-600 rounded-full transition-all duration-700"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState
+                  type="goals"
+                  title="Belum ada target tabungan"
+                  description="Buat target pertamamu! Misalnya tabungan liburan, kendaraan, atau dana darurat."
+                  ctaText="Buat Target Pertama"
+                  onCtaClick={() => navigate('/goals')}
+                  icon={Target}
+                />
+              )}
 
               <button
                 onClick={() => navigate('/goals')}
