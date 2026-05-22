@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '../utils/constants';
 import { formatNumber, parseRupiah } from '../utils/currency';
 import { 
@@ -52,7 +52,7 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     initialData.amount ? formatNumber(initialData.amount) : ''
   );
 
-  const [taxPercentage, setTaxPercentage] = useState('');
+  const TAX_PERCENTAGE = 11;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle Tab change specifically to update categories list
@@ -63,9 +63,6 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
       type,
       category: type === 'expense' ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]
     }));
-    if (type !== 'expense') {
-      setTaxPercentage(''); // Reset tax back if switching to income
-    }
   };
 
   const handleChange = (e) => {
@@ -82,13 +79,6 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }));
   };
 
-  const handleTaxChange = (e) => {
-    let val = e.target.value;
-    if (val < 0) val = 0;
-    if (val > 100) val = 100;
-    setTaxPercentage(val);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.amount <= 0) {
@@ -97,9 +87,9 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }
 
     let finalAmount = formData.amount;
-    if (activeTab === 'expense' && taxPercentage) {
-       const taxAmount = (finalAmount * parseFloat(taxPercentage)) / 100;
-       finalAmount += taxAmount;
+    if (activeTab === 'expense') {
+      const taxAmount = (finalAmount * TAX_PERCENTAGE) / 100;
+      finalAmount += taxAmount;
     }
     
     // Menggabungkan tanggal yang dipilih dengan waktu saat ini di lokal
@@ -181,16 +171,13 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
         
         {activeTab === 'expense' ? (
           <div>
-            <label className={labelClass}>Pajak (%) <span className="text-[10px] text-gray-400 font-medium normal-case">(Opsional)</span></label>
+            <label className={labelClass}>Pajak (PPN 11%)</label>
             <div className="relative">
               <input
-                type="number"
-                min="0"
-                max="100"
-                value={taxPercentage}
-                onChange={handleTaxChange}
-                placeholder="0"
-                className={`${inputClass} pr-12 font-bold text-gray-600`}
+                type="text"
+                value={TAX_PERCENTAGE}
+                readOnly
+                className={`${inputClass} pr-12 font-bold text-gray-600 bg-[#f1f5f9] cursor-not-allowed`}
               />
               <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-gray-400">%</span>
             </div>
@@ -253,7 +240,7 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
           <p className="text-xs text-[#42526e] leading-relaxed">
             <span className="font-bold text-blue-600 block mb-1">Tips Keuangan:</span>
             {activeTab === 'expense' 
-              ? "Bila ada PPN (misal 11%), Anda cukup memasukkannya pada kolom Pajak. Sistem akan otomatis menjumlahkannya." 
+              ? "Semua pengeluaran akan dikenai PPN 11% otomatis ketika disimpan."
               : "Catat setiap pemasukan dengan rinci agar Anda dapat menganalisis sumber pendapatan terbaik Anda."}
           </p>
         </div>
