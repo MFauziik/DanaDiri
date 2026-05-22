@@ -53,6 +53,7 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
   );
 
   const TAX_PERCENTAGE = 11;
+  const [useTax, setUseTax] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle Tab change specifically to update categories list
@@ -87,7 +88,7 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }
 
     let finalAmount = formData.amount;
-    if (activeTab === 'expense') {
+    if (activeTab === 'expense' && useTax) {
       const taxAmount = (finalAmount * TAX_PERCENTAGE) / 100;
       finalAmount += taxAmount;
     }
@@ -171,7 +172,16 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
         
         {activeTab === 'expense' ? (
           <div>
-            <label className={labelClass}>Pajak (PPN 11%)</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className={labelClass}>Pajak (PPN 11%)</label>
+              <button
+                type="button"
+                onClick={() => setUseTax((prev) => !prev)}
+                className={`inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-bold transition ${useTax ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+              >
+                {useTax ? 'ON' : 'OFF'}
+              </button>
+            </div>
             <div className="relative">
               <input
                 type="text"
@@ -181,6 +191,11 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
               />
               <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-gray-400">%</span>
             </div>
+            <p className="text-[11px] text-gray-500 mt-2">
+              {useTax
+                ? 'PPN 11% akan ditambahkan pada transaksi pengeluaran.'
+                : 'PPN dimatikan untuk transaksi pengeluaran ini.'}
+            </p>
           </div>
         ) : (
           <div className="flex flex-col justify-end">
