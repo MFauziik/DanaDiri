@@ -14,20 +14,45 @@ import { formatRupiah } from '../utils/currency';
 import CategoryIcon from '../components/CategoryIcon';
 import { exportToPDF, exportToExcel } from '../utils/export';
 import { FileText, FileSpreadsheet, AlertTriangle, PlusCircle } from 'lucide-react';
+import Dropdown from '../components/Dropdown';
 import { CATEGORIES as CATEGORY_OPTIONS } from '../utils/constants';
 
-const generateLast12Months = () => {
+const generateMonthsSince = (startDateString) => {
   const list = [];
-  const d = new Date();
-  for(let i=0; i<12; i++) {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    list.push(`${yyyy}-${mm}`);
-    d.setMonth(d.getMonth() - 1);
+  const end = new Date();
+  let start;
+  
+  if (startDateString) {
+    start = new Date(startDateString);
+  } else {
+    // Fallback: 1 year ago
+    start = new Date();
+    start.setFullYear(start.getFullYear() - 1);
   }
+  
+  // Set to start of month for comparison
+  let current = new Date(end.getFullYear(), end.getMonth(), 1);
+  const stop = new Date(start.getFullYear(), start.getMonth(), 1);
+
+  while (current >= stop) {
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    list.push(`${yyyy}-${mm}`);
+    current.setMonth(current.getMonth() - 1);
+    
+    // Limits safety to 5 years (default) or if it goes back too far by error
+    if (list.length > 60) break;
+  }
+  
+  // Fallback if empty
+  if (list.length === 0) {
+    const yyyy = end.getFullYear();
+    const mm = String(end.getMonth() + 1).padStart(2, '0');
+    list.push(`${yyyy}-${mm}`);
+  }
+  
   return list;
 };
-const MONTH_OPTIONS = generateLast12Months();
 const Transactions = ({ user, setUser }) => {
   const [transactions, setTransactions] = useState([]);
   const [recurrings, setRecurrings] = useState([]);
@@ -261,6 +286,26 @@ const handlePrev = () => {
 const handlePageClick = (page) => {
 setCurrentPage(page);
 };
+
+  // Prepare options for Dropdown
+  const monthDropdownOptions = useMemo(() => {
+    const monthList = generateMonthsSince(user?.createdAt);
+    return [
+      { label: 'Semua Tanggal', value: '' },
+      ...monthList.map(m => ({ label: formatMonthLabel(m), value: m }))
+    ];
+  }, [user?.createdAt]);
+
+  const categoryDropdownOptions = useMemo(() => [
+    { label: 'Kategori', value: '' },
+    ...CATEGORY_OPTIONS.map(c => ({ label: c, value: c }))
+  ], []);
+
+  const typeDropdownOptions = [
+    { label: 'Jenis', value: '' },
+    { label: 'Pemasukan', value: 'income' },
+    { label: 'Pengeluaran', value: 'expense' }
+  ];
 
 if (loading && transactions.length === 0) {
   return (
@@ -505,41 +550,29 @@ if (error) {
                     />
                   </div>
 
-                  <select
+                  <Dropdown
+                    options={monthDropdownOptions}
                     value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="h-11 px-4 rounded-xl bg-[#f7f8fc] border border-transparent focus:border-[#2f6df6] focus:bg-white outline-none text-sm text-[#344054] min-w-[170px]"
-                  >
-                    <option value="">Semua Tanggal</option>
-                    {MONTH_OPTIONS.map((monthStr, index) => (
-                      <option key={index} value={monthStr}>
-                        {formatMonthLabel(monthStr)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedMonth}
+                    placeholder="Pilih Tanggal"
+                    className="w-full md:w-[190px]"
+                  />
 
-                  <select
+                  <Dropdown
+                    options={categoryDropdownOptions}
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="h-11 px-4 rounded-xl bg-[#f7f8fc] border border-transparent focus:border-[#2f6df6] focus:bg-white outline-none text-sm text-[#344054] min-w-[150px]"
-                  >
-                    <option value="">Kategori</option>
-                    {CATEGORY_OPTIONS.map((category, index) => (
-                      <option key={index} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedCategory}
+                    placeholder="Kategori"
+                    className="w-full md:w-[160px]"
+                  />
 
-                  <select
+                  <Dropdown
+                    options={typeDropdownOptions}
                     value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                    className="h-11 px-4 rounded-xl bg-[#f7f8fc] border border-transparent focus:border-[#2f6df6] focus:bg-white outline-none text-sm text-[#344054] min-w-[130px]"
-                  >
-                    <option value="">Jenis</option>
-                    <option value="income">Pemasukan</option>
-                    <option value="expense">Pengeluaran</option>
-                  </select>
+                    onChange={setSelectedType}
+                    placeholder="Jenis"
+                    className="w-full md:w-[140px]"
+                  />
                 </div>
 
                 <div className="flex items-center gap-3">

@@ -62,9 +62,7 @@ const processRecurringTransactions = async (retryCount = 0) => {
           amount: recurring.amount,
           type: recurring.type,
           category: recurring.category,
-          description: recurring.description
-            ? `[Auto] ${recurring.description}`
-            : `[Auto] Transaksi berulang tanggal ${currentDay}`,
+          description: `(Auto) ${recurring.description || 'Transaksi Berulang'}`,
           date: today,
         });
 
@@ -141,9 +139,7 @@ const processSpecificRecurring = async (recurringId, forceCheck = false) => {
       amount: recurring.amount,
       type: recurring.type,
       category: recurring.category,
-      description: recurring.description
-        ? `[Auto] ${recurring.description}`
-        : `[Auto] Transaksi berulang tanggal ${currentDay}`,
+      description: `(Auto) ${recurring.description || 'Transaksi Berulang'}`,
       date: today,
     });
 

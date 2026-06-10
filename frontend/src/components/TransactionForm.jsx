@@ -46,14 +46,13 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     category: initialData.category || EXPENSE_CATEGORIES[0],
     description: initialData.description || '',
     date: initialData.date ? initialData.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    tax: initialData.tax || (initialData._id ? 0 : (initialData.type === 'income' ? 0 : 11)),
   });
 
   const [displayAmount, setDisplayAmount] = useState(
     initialData.amount ? formatNumber(initialData.amount) : ''
   );
 
-  const TAX_PERCENTAGE = 11;
-  const [useTax, setUseTax] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle Tab change specifically to update categories list
@@ -62,7 +61,8 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     setFormData((prev) => ({ 
       ...prev, 
       type,
-      category: type === 'expense' ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]
+      category: type === 'expense' ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0],
+      tax: prev.tax === 0 || prev.tax === 11 ? (type === 'expense' ? 11 : 0) : prev.tax
     }));
   };
 
@@ -88,9 +88,15 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }
 
     let finalAmount = formData.amount;
-    if (activeTab === 'expense' && useTax) {
-      const taxAmount = (finalAmount * TAX_PERCENTAGE) / 100;
-      finalAmount += taxAmount;
+    const taxRate = parseFloat(formData.tax) || 0;
+    
+    if (taxRate > 0) {
+      const taxAmount = (finalAmount * taxRate) / 100;
+      if (activeTab === 'expense') {
+        finalAmount += taxAmount;
+      } else {
+        finalAmount -= taxAmount;
+      }
     }
     
     // Menggabungkan tanggal yang dipilih dengan waktu saat ini di lokal
@@ -170,40 +176,30 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
           </div>
         </div>
         
-        {activeTab === 'expense' ? (
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <label className={labelClass}>Pajak (PPN 11%)</label>
-              <button
-                type="button"
-                onClick={() => setUseTax((prev) => !prev)}
-                className={`inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-bold transition ${useTax ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                {useTax ? 'ON' : 'OFF'}
-              </button>
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                value={TAX_PERCENTAGE}
-                readOnly
-                className={`${inputClass} pr-12 font-bold text-gray-600 bg-[#f1f5f9] cursor-not-allowed`}
-              />
-              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-gray-400">%</span>
-            </div>
-            <p className="text-[11px] text-gray-500 mt-2">
-              {useTax
-                ? 'PPN 11% akan ditambahkan pada transaksi pengeluaran.'
-                : 'PPN dimatikan untuk transaksi pengeluaran ini.'}
-            </p>
+        <div>
+          <label className={labelClass}>
+            {activeTab === 'expense' ? 'Pajak (PPN %)' : 'Pajak (PPh %)'}
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              name="tax"
+              value={formData.tax}
+              onChange={handleChange}
+              className={`${inputClass} pr-12 font-bold text-gray-600`}
+              placeholder="0"
+              min="0"
+              max="100"
+              step="0.1"
+            />
+            <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-gray-400">%</span>
           </div>
-        ) : (
-          <div className="flex flex-col justify-end">
-             <div className="bg-[#f0f4ff]/50 border border-[#e0e7ff] rounded-2xl h-14 flex items-center px-4">
-              <p className="text-xs text-[#42526e] font-medium italic">Tidak ada pajak untuk pemasukan</p>
-             </div>
-          </div>
-        )}
+          <p className="text-[11px] text-gray-500 mt-2">
+            {activeTab === 'expense' 
+              ? 'Pajak akan ditambahkan pada total pengeluaran.' 
+              : 'Pajak akan dikurangkan dari total pemasukan.'}
+          </p>
+        </div>
       </div>
 
       {/* Category Grid Selection */}
@@ -255,8 +251,8 @@ const TransactionForm = ({ initialData = {}, onSubmit, onCancel }) => {
           <p className="text-xs text-[#42526e] leading-relaxed">
             <span className="font-bold text-blue-600 block mb-1">Tips Keuangan:</span>
             {activeTab === 'expense' 
-              ? "Semua pengeluaran akan dikenai PPN 11% otomatis ketika disimpan."
-              : "Catat setiap pemasukan dengan rinci agar Anda dapat menganalisis sumber pendapatan terbaik Anda."}
+              ? "Masukkan persentase pajak (seperti PPN 11%) yang akan ditambahkan pada total transaksi Anda."
+              : "Masukkan persentase pajak (seperti PPh) yang akan memotong jumlah pendapatan bersih Anda."}
           </p>
         </div>
       </div>
